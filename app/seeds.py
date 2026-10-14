@@ -1,13 +1,16 @@
 from datetime import datetime
 from sqlalchemy.orm import Session
-from app.database import SessionLocal, init_db
+from app.database import SessionLocal
 from app.models import (
     Department, Activity, Scholarship, SchoolTerm, SchoolClass, 
     Instructor, Student, Requisition, ClassSchedule, Enrollment
 )
 
 def run_seeds():
-    init_db()
+    """
+    Insere dados padrão (departamentos IME, atividades e bolsas) se ainda não existirem.
+    NÃO chama init_db() para evitar recursão infinita.
+    """
     db: Session = SessionLocal()
     try:
         # 1. Departamentos do IME
@@ -55,15 +58,16 @@ def run_seeds():
                 end_date_enrollments=datetime(2026, 2, 28)
             )
             db.add(term)
-            db.flush()
 
         db.commit()
-        print("Dados iniciais (seeders) inseridos com sucesso!")
     except Exception as e:
         db.rollback()
-        print(f"Erro ao executar seeders: {e}")
+        raise e
     finally:
         db.close()
 
 if __name__ == "__main__":
+    from app.database import init_db
+    init_db()
     run_seeds()
+    print("Seeds executados manualmente com sucesso!")

@@ -6,16 +6,37 @@ from app.config import settings
 logger = logging.getLogger("usp_oauth")
 
 class USPOAuthService:
-    def __init__(self):
-        self.client_key = settings.USP_CLIENT_KEY
-        self.client_secret = settings.USP_CLIENT_SECRET
-        self.callback_id = settings.USP_CALLBACK_ID
-        self.base_url = settings.USP_OAUTH_URL.rstrip('/')
+    @property
+    def client_key(self) -> str:
+        return settings.oauth_key
+
+    @property
+    def client_secret(self) -> str:
+        return settings.oauth_secret
+
+    @property
+    def callback_id(self) -> str:
+        return settings.oauth_callback_id
+
+    @property
+    def base_url(self) -> str:
+        return settings.USP_OAUTH_URL.rstrip('/')
         
-        self.request_token_url = f"{self.base_url}/request_token"
-        self.authorize_url = f"{self.base_url}/authorize"
-        self.access_token_url = f"{self.base_url}/access_token"
-        self.user_info_url = f"{self.base_url}/usuariousp"
+    @property
+    def request_token_url(self) -> str:
+        return f"{self.base_url}/request_token"
+
+    @property
+    def authorize_url(self) -> str:
+        return f"{self.base_url}/authorize"
+
+    @property
+    def access_token_url(self) -> str:
+        return f"{self.base_url}/access_token"
+
+    @property
+    def user_info_url(self) -> str:
+        return f"{self.base_url}/usuariousp"
 
     def get_request_token(self, callback_url: str) -> Tuple[str, str, str]:
         """
@@ -36,7 +57,7 @@ class USPOAuthService:
             auth_url = f"{self.authorize_url}?oauth_token={oauth_token}"
             return auth_url, oauth_token, oauth_token_secret
         except Exception as e:
-            logger.error(f"Erro ao obter request_token da USP: {e}")
+            logger.error(f"Erro ao obter request_token da USP (key={self.client_key}, callback_id={self.callback_id}): {e}")
             raise e
 
     def fetch_user_data(self, oauth_token: str, oauth_token_secret: str, oauth_verifier: str) -> Dict[str, Any]:

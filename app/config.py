@@ -18,9 +18,21 @@ class Settings(BaseSettings):
     USP_CLIENT_KEY: str = os.getenv("USP_CLIENT_KEY", os.getenv("SENHAUNICA_KEY", "ime_helios"))
     USP_CLIENT_SECRET: str = os.getenv("USP_CLIENT_SECRET", os.getenv("SENHAUNICA_SECRET", "udhMktxPF5cTcYjEOk8tyB12Fm1aH8fJvAmqGtWt"))
     USP_CALLBACK_ID: str = os.getenv("USP_CALLBACK_ID", os.getenv("SENHAUNICA_CALLBACK_ID", "82"))
-    USP_CALLBACK_URL: str = os.getenv("USP_CALLBACK_URL", "http://localhost:8020/auth/callback")
+    USP_CALLBACK_URL: str = os.getenv("USP_CALLBACK_URL", "http://localhost:8020/callback")
     USP_OAUTH_URL: str = os.getenv("USP_OAUTH_URL", "https://uspdigital.usp.br/wsusuario/oauth")
     SENHAUNICA_ADMINS: str = os.getenv("SENHAUNICA_ADMINS", "7762448,2803642,5085616")
+
+    @property
+    def oauth_key(self) -> str:
+        return (os.getenv("USP_CLIENT_KEY") or os.getenv("SENHAUNICA_KEY") or self.USP_CLIENT_KEY or "").strip()
+
+    @property
+    def oauth_secret(self) -> str:
+        return (os.getenv("USP_CLIENT_SECRET") or os.getenv("SENHAUNICA_SECRET") or self.USP_CLIENT_SECRET or "").strip()
+
+    @property
+    def oauth_callback_id(self) -> str:
+        return (os.getenv("USP_CALLBACK_ID") or os.getenv("SENHAUNICA_CALLBACK_ID") or self.USP_CALLBACK_ID or "82").strip()
     
     # USP Replicado (Sybase / MSSQL)
     REPLICADO_HOST: str = os.getenv("REPLICADO_HOST", "200.144.255.63")
