@@ -28,7 +28,28 @@ def get_db():
     finally:
         db.close()
 
-def init_db():
+import time
+import logging
+
+logger = logging.getLogger("database")
+
+def init_db(max_retries: int = 15, retry_delay: int = 2):
     # Import all models to ensure they are registered with Base metadata
     import app.models  # noqa: F401
-    Base.metadata.create_all(bind=engine)
+    
+    for attempt in range(1, max_retries + 1):
+        try:
+            Base.metadata.create_all(bind=engine)
+            try:
+                from app.seeds import run_seeds
+                run_seeds()
+            except Exception as se:
+                logger.warning(f"Aviso ao executar seeds automáticos: {se}")
+            logger.info("Banco de dados e modelos inicializados com sucesso!")
+            break
+        except Exception as e:
+            if attempt == max_retries:
+                logger.error(f"Falha definitiva ao conectar ao banco de dados: {e}")
+                raise e
+            logger.warning(f"Aguardando banco de dados (tentativa {attempt}/{max_retries})...")
+            time.sleep(retry_delay)
