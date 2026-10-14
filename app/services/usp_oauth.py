@@ -48,13 +48,13 @@ class USPOAuthService:
             redirect_uri=callback_url
         )
         try:
-            token = client.fetch_request_token(
-                self.request_token_url,
-                data={"callback_id": self.callback_id}
-            )
+            # No protocolo da USP, o request_token NÃO recebe body (isso alteraria a assinatura OAuth 1.0)
+            token = client.fetch_request_token(self.request_token_url)
             oauth_token = token.get("oauth_token")
             oauth_token_secret = token.get("oauth_token_secret")
-            auth_url = f"{self.authorize_url}?oauth_token={oauth_token}"
+            
+            # O callback_id é anexado na URL de autorização para o usuário
+            auth_url = f"{self.authorize_url}?oauth_token={oauth_token}&callback_id={self.callback_id}"
             return auth_url, oauth_token, oauth_token_secret
         except Exception as e:
             logger.error(f"Erro ao obter request_token da USP (key={self.client_key}, callback_id={self.callback_id}): {e}")
@@ -72,10 +72,13 @@ class USPOAuthService:
             verifier=oauth_verifier
         )
         try:
-            # 1. Troca por access token
-            access_token = client.fetch_access_token(self.access_token_url)
+            # 1. Troca por access token (USP recebe oauth_verifier na URL/body)
+            access_token = client.fetch_access_token(
+                f"{self.access_token_url}?oauth_verifier={oauth_verifier}",
+                data={"oauth_verifier": oauth_verifier, "oauth_token": oauth_token}
+            )
             
-            # 2. Requisita os dados do usuário
+            # 2. Requisita os dados do usuário via POST
             client.token = access_token
             response = client.post(self.user_info_url)
             response.raise_for_status()

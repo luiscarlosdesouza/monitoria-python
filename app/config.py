@@ -24,15 +24,18 @@ class Settings(BaseSettings):
 
     @property
     def oauth_key(self) -> str:
-        return (os.getenv("USP_CLIENT_KEY") or os.getenv("SENHAUNICA_KEY") or self.USP_CLIENT_KEY or "").strip()
+        key = (os.getenv("SENHAUNICA_KEY") or os.getenv("USP_CLIENT_KEY") or self.USP_CLIENT_KEY or "").strip()
+        return key if key else "ime_helios"
 
     @property
     def oauth_secret(self) -> str:
-        return (os.getenv("USP_CLIENT_SECRET") or os.getenv("SENHAUNICA_SECRET") or self.USP_CLIENT_SECRET or "").strip()
+        secret = (os.getenv("SENHAUNICA_SECRET") or os.getenv("USP_CLIENT_SECRET") or self.USP_CLIENT_SECRET or "").strip()
+        return secret if secret else "udhMktxPF5cTcYjEOk8tyB12Fm1aH8fJvAmqGtWt"
 
     @property
     def oauth_callback_id(self) -> str:
-        return (os.getenv("USP_CALLBACK_ID") or os.getenv("SENHAUNICA_CALLBACK_ID") or self.USP_CALLBACK_ID or "82").strip()
+        cid = (os.getenv("SENHAUNICA_CALLBACK_ID") or os.getenv("USP_CALLBACK_ID") or self.USP_CALLBACK_ID or "").strip()
+        return cid if cid else "82"
     
     # USP Replicado (Sybase / MSSQL)
     REPLICADO_HOST: str = os.getenv("REPLICADO_HOST", "200.144.255.63")
