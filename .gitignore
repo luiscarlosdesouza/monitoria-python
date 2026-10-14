@@ -1,0 +1,32 @@
+# Ambientes virtuais
+.venv/
+venv/
+ENV/
+env/
+
+# Arquivos sensíveis e credenciais (NUNCA SUBIR AO GITHUB)
+.env
+env.txt
+*.env.*
+!.env.example
+
+# Bancos de dados locais / temporários
+*.db
+*.sqlite
+*.sqlite3
+monitoria.db
+
+# Python bytecode e caches
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+
+# Logs e arquivos de sistema
+*.log
+.DS_Store
+Thumbs.db
+
+# IDEs
+.vscode/
+.idea/

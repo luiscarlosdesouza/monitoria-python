@@ -1,0 +1,105 @@
+{% extends "base.html" %}
+
+{% block title %}Início - Sistema de Monitoria IME-USP{% endblock %}
+
+{% block content %}
+<div class="row align-items-center mb-5 py-4 bg-white rounded-4 shadow-sm p-4 border border-light">
+    <div class="col-lg-8">
+        <span class="badge bg-primary-subtle text-primary fw-semibold px-3 py-2 mb-2 rounded-pill">
+            <i class="fa-solid fa-sparkles me-1"></i> Nova Plataforma em Python / FastAPI
+        </span>
+        <h1 class="display-6 fw-bold text-dark mt-2">Sistema de Monitoria - IME/USP</h1>
+        <p class="lead text-secondary">
+            Plataforma integrada para gerenciamento de turmas, solicitações de docentes, 
+            inscrições de estudantes e atesto de frequência de monitorias do IME.
+        </p>
+        <div class="d-flex flex-wrap gap-2 mt-3">
+            <a href="/schoolclasses" class="btn btn-usp">
+                <i class="fa-solid fa-chalkboard-user me-1"></i> Consultar Turmas
+            </a>
+            <a href="/enrollments" class="btn btn-outline-secondary">
+                <i class="fa-solid fa-user-pen me-1"></i> Área do Candidato
+            </a>
+        </div>
+    </div>
+    <div class="col-lg-4 text-center d-none d-lg-block">
+        <div class="p-4 bg-light rounded-circle d-inline-block shadow-inner">
+            <i class="fa-solid fa-graduation-cap fa-5x text-primary opacity-75"></i>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4">
+    <!-- Card Períodos -->
+    <div class="col-md-6 col-lg-3">
+        <div class="card card-custom h-100 p-3">
+            <div class="d-flex align-items-center mb-3">
+                <div class="p-3 bg-primary bg-opacity-10 text-primary rounded-3 me-3">
+                    <i class="fa-solid fa-calendar-check fa-xl"></i>
+                </div>
+                <h5 class="card-title mb-0 fw-bold">Períodos Letivos</h5>
+            </div>
+            <p class="card-text text-muted small">
+                Gerencie semestres, editais de abertura e cronogramas de inscrição e avaliação.
+            </p>
+            <a href="/schoolterms" class="mt-auto text-decoration-none fw-semibold text-primary">
+                Acessar períodos &rarr;
+            </a>
+        </div>
+    </div>
+
+    <!-- Card Turmas -->
+    <div class="col-md-6 col-lg-3">
+        <div class="card card-custom h-100 p-3">
+            <div class="d-flex align-items-center mb-3">
+                <div class="p-3 bg-success bg-opacity-10 text-success rounded-3 me-3">
+                    <i class="fa-solid fa-book-bookmark fa-xl"></i>
+                </div>
+                <h5 class="card-title mb-0 fw-bold">Disciplinas & Turmas</h5>
+            </div>
+            <p class="card-text text-muted small">
+                Consulte turmas do semestre, horários de aulas e departamentos (MAC, MAT, MAE, MAP).
+            </p>
+            <a href="/schoolclasses" class="mt-auto text-decoration-none fw-semibold text-success">
+                Ver disciplinas &rarr;
+            </a>
+        </div>
+    </div>
+
+    <!-- Card Pedidos Docentes -->
+    <div class="col-md-6 col-lg-3">
+        <div class="card card-custom h-100 p-3">
+            <div class="d-flex align-items-center mb-3">
+                <div class="p-3 bg-warning bg-opacity-10 text-warning rounded-3 me-3">
+                    <i class="fa-solid fa-user-tie fa-xl"></i>
+                </div>
+                <h5 class="card-title mb-0 fw-bold">Área do Docente</h5>
+            </div>
+            <p class="card-text text-muted small">
+                Solicitação de monitores por turma, definição de prioridades e atesto de frequência.
+            </p>
+            <a href="/requisitions" class="mt-auto text-decoration-none fw-semibold text-warning">
+                Pedidos de monitoria &rarr;
+            </a>
+        </div>
+    </div>
+
+    <!-- Card Inscrições Alunos -->
+    <div class="col-md-6 col-lg-3">
+        <div class="card card-custom h-100 p-3">
+            <div class="d-flex align-items-center mb-3">
+                <div class="p-3 bg-info bg-opacity-10 text-info rounded-3 me-3">
+                    <i class="fa-solid fa-file-signature fa-xl"></i>
+                </div>
+                <h5 class="card-title mb-0 fw-bold">Inscrições</h5>
+            </div>
+            <p class="card-text text-muted small">
+                Inscrição de estudantes para bolsas e monitoria voluntária com upload de histórico.
+            </p>
+            <a href="/enrollments" class="mt-auto text-decoration-none fw-semibold text-info">
+                Inscrever-se &rarr;
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

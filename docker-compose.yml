@@ -1,0 +1,60 @@
+version: '3.8'
+
+services:
+  db:
+    image: mariadb:10.11
+    container_name: monitoria-mariadb
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-rootpassword123}
+      MYSQL_DATABASE: ${DB_DATABASE:-monitoria_db}
+      MYSQL_USER: ${DB_USERNAME:-monitoria}
+      MYSQL_PASSWORD: ${DB_PASSWORD:-monitoria123}
+    ports:
+      - "${DB_EXTERNAL_PORT:-3307}:3306"
+    volumes:
+      - monitoria_mariadb_data:/var/lib/mysql
+    networks:
+      - monitoria-network
+
+  app:
+    build: .
+    container_name: monitoria-fastapi
+    restart: always
+    depends_on:
+      - db
+    ports:
+      - "${APP_PORT:-8020}:8000"
+    environment:
+      - APP_NAME=${APP_NAME:-Sistema de Monitoria - IME-USP}
+      - ENVIRONMENT=${ENVIRONMENT:-production}
+      - SECRET_KEY=${SECRET_KEY:-super-secret-key-change-in-production-123456}
+      - DATABASE_URL=mysql+pymysql://${DB_USERNAME:-monitoria}:${DB_PASSWORD:-monitoria123}@db:3306/${DB_DATABASE:-monitoria_db}?charset=utf8mb4
+      - USP_CLIENT_KEY=${USP_CLIENT_KEY:-ime_helios}
+      - USP_CLIENT_SECRET=${USP_CLIENT_SECRET:-udhMktxPF5cTcYjEOk8tyB12Fm1aH8fJvAmqGtWt}
+      - USP_CALLBACK_ID=${USP_CALLBACK_ID:-82}
+      - USP_CALLBACK_URL=${USP_CALLBACK_URL:-http://localhost:8020/auth/callback}
+      - USP_OAUTH_URL=${USP_OAUTH_URL:-https://uspdigital.usp.br/wsusuario/oauth}
+      - SENHAUNICA_ADMINS=${SENHAUNICA_ADMINS:-7762448,2803642,5085616}
+      - REPLICADO_HOST=${REPLICADO_HOST:-200.144.255.63}
+      - REPLICADO_PORT=${REPLICADO_PORT:-1433}
+      - REPLICADO_DATABASE=${REPLICADO_DATABASE:-replicado}
+      - REPLICADO_USERNAME=${REPLICADO_USERNAME:-replicado-r}
+      - REPLICADO_PASSWORD=${REPLICADO_PASSWORD:-4rqu1mede$}
+      - REPLICADO_SYBASE=${REPLICADO_SYBASE:-1}
+      - MAIL_HOST=${MAIL_HOST:-smtp.ime.usp.br}
+      - MAIL_PORT=${MAIL_PORT:-587}
+      - MAIL_USERNAME=${MAIL_USERNAME:-apoio}
+      - MAIL_PASSWORD=${MAIL_PASSWORD:-Leirohk7boaliGh2mah6veiZuiw3jok9}
+      - MAIL_FROM_ADDRESS=${MAIL_FROM_ADDRESS:-sistemas@ime.usp.br}
+    volumes:
+      - .:/app
+    networks:
+      - monitoria-network
+
+volumes:
+  monitoria_mariadb_data:
+
+networks:
+  monitoria-network:
+    name: monitoria-network

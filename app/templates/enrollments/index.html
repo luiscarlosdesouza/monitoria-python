@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+
+{% block title %}Inscrições de Monitores - IME-USP{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="fw-bold mb-1"><i class="fa-solid fa-file-signature text-info me-2"></i> Inscrições de Alunos</h2>
+        <p class="text-muted mb-0">Candidaturas de estudantes para turmas com pedidos de monitoria.</p>
+    </div>
+    <a href="/enrollments/create" class="btn btn-info text-white fw-semibold">
+        <i class="fa-solid fa-pen-to-square me-1"></i> Nova Inscrição
+    </a>
+</div>
+
+<div class="card card-custom p-0 overflow-hidden">
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th class="ps-4">Aluno(a)</th>
+                    <th>Nº USP</th>
+                    <th>Disciplina / Turma</th>
+                    <th>Modalidade</th>
+                    <th>Disponibilidade</th>
+                    <th>Data</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% if enrollments %}
+                    {% for e in enrollments %}
+                    <tr>
+                        <td class="ps-4 fw-semibold">{{ e.student.nompes if e.student else '-' }}</td>
+                        <td><code>{{ e.student.codpes if e.student else '-' }}</code></td>
+                        <td>{{ e.school_class.coddis }} (Turma {{ e.school_class.codtur }})</td>
+                        <td>
+                            {% if e.voluntario %}
+                                <span class="badge bg-secondary-subtle text-secondary px-2 py-1 rounded-pill">Voluntário</span>
+                            {% else %}
+                                <span class="badge bg-success-subtle text-success px-2 py-1 rounded-pill">Bolsa Remunerada</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if e.disponibilidade_diurno %}<span class="badge bg-light text-dark border">Diurno</span>{% endif %}
+                            {% if e.disponibilidade_noturno %}<span class="badge bg-dark">Noturno</span>{% endif %}
+                        </td>
+                        <td class="text-muted small">{{ e.created_at.strftime('%d/%m/%Y') if e.created_at else '-' }}</td>
+                    </tr>
+                    {% endfor %}
+                {% else %}
+                    <tr>
+                        <td colspan="6" class="text-center py-5 text-muted">
+                            <i class="fa-regular fa-id-card fa-3x mb-3 d-block opacity-50"></i>
+                            Nenhuma inscrição de aluno registrada até o momento.
+                        </td>
+                    </tr>
+                {% endif %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
