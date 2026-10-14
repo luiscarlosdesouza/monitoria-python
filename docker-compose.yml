@@ -47,8 +47,6 @@ services:
       - MAIL_USERNAME=${MAIL_USERNAME:-apoio}
       - MAIL_PASSWORD=${MAIL_PASSWORD:-Leirohk7boaliGh2mah6veiZuiw3jok9}
       - MAIL_FROM_ADDRESS=${MAIL_FROM_ADDRESS:-sistemas@ime.usp.br}
-    volumes:
-      - .:/app
     networks:
       - monitoria-network
 
