@@ -30,10 +30,13 @@ services:
       - ENVIRONMENT=${ENVIRONMENT:-production}
       - SECRET_KEY=${SECRET_KEY:-super-secret-key-change-in-production-123456}
       - DATABASE_URL=mysql+pymysql://${DB_USERNAME:-monitoria}:${DB_PASSWORD:-monitoria123}@db:3306/${DB_DATABASE:-monitoria_db}?charset=utf8mb4
-      - USP_CLIENT_KEY=${USP_CLIENT_KEY:-ime_helios}
-      - USP_CLIENT_SECRET=${USP_CLIENT_SECRET:-udhMktxPF5cTcYjEOk8tyB12Fm1aH8fJvAmqGtWt}
-      - USP_CALLBACK_ID=${USP_CALLBACK_ID:-82}
-      - USP_CALLBACK_URL=${USP_CALLBACK_URL:-http://localhost:8020/auth/callback}
+      - USP_CLIENT_KEY=${SENHAUNICA_KEY:-${USP_CLIENT_KEY:-ime_helios}}
+      - USP_CLIENT_SECRET=${SENHAUNICA_SECRET:-${USP_CLIENT_SECRET:-udhMktxPF5cTcYjEOk8tyB12Fm1aH8fJvAmqGtWt}}
+      - USP_CALLBACK_ID=${SENHAUNICA_CALLBACK_ID:-${USP_CALLBACK_ID:-82}}
+      - SENHAUNICA_KEY=${SENHAUNICA_KEY:-${USP_CLIENT_KEY:-ime_helios}}
+      - SENHAUNICA_SECRET=${SENHAUNICA_SECRET:-${USP_CLIENT_SECRET:-udhMktxPF5cTcYjEOk8tyB12Fm1aH8fJvAmqGtWt}}
+      - SENHAUNICA_CALLBACK_ID=${SENHAUNICA_CALLBACK_ID:-${USP_CALLBACK_ID:-82}}
+      - USP_CALLBACK_URL=${USP_CALLBACK_URL:-http://localhost:8020/callback}
       - USP_OAUTH_URL=${USP_OAUTH_URL:-https://uspdigital.usp.br/wsusuario/oauth}
       - SENHAUNICA_ADMINS=${SENHAUNICA_ADMINS:-7762448,2803642,5085616}
       - REPLICADO_HOST=${REPLICADO_HOST:-200.144.255.63}
