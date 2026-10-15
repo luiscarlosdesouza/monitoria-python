@@ -72,23 +72,32 @@ class USPOAuthService:
             verifier=oauth_verifier
         )
         try:
-            # 1. Troca por access token (USP recebe oauth_verifier na URL/body)
-            access_token = client.fetch_access_token(
-                f"{self.access_token_url}?oauth_verifier={oauth_verifier}",
-                data={"oauth_verifier": oauth_verifier, "oauth_token": oauth_token}
-            )
+            # 1. Troca por access token (parâmetros enviados estritamente no header de autorização)
+            access_token = client.fetch_access_token(self.access_token_url)
             
             # 2. Requisita os dados do usuário via POST
             client.token = access_token
-            response = client.post(self.user_info_url)
-            response.raise_for_status()
+            response = client.post(self.user_info_url, headers={"Accept": "application/json"})
+            if response.status_code != 200:
+                logger.error(f"Erro ao buscar usuariousp (status {response.status_code}): {response.text}")
+                response.raise_for_status()
             
-            # O serviço USP pode responder em JSON ou XML dependendo do header
+            # O serviço USP pode responder em JSON ou XML dependendo do ambiente/header
             try:
                 user_data = response.json()
             except Exception:
-                # Se responder em texto/form-data
-                user_data = {"raw_response": response.text}
+                try:
+                    import xml.etree.ElementTree as ET
+                    root = ET.fromstring(response.text)
+                    user_data = {child.tag: child.text for child in root}
+                    vinculos = []
+                    for v in root.findall(".//vinculo"):
+                        vinculos.append({child.tag: child.text for child in v})
+                    if vinculos:
+                        user_data["vinculo"] = vinculos
+                except Exception as xml_err:
+                    logger.warning(f"Não foi possível decodificar resposta da USP como JSON nem XML: {xml_err}")
+                    user_data = {"raw_response": response.text}
                 
             return self.normalize_user(user_data)
         except Exception as e:
@@ -101,7 +110,12 @@ class USPOAuthService:
         """
         codpes = str(raw.get("loginUsuario", "")).strip()
         name = raw.get("nomeUsuario", "Usuário USP")
-        email = raw.get("emailPrincipalUsuario", "")
+        email = (
+            raw.get("emailPrincipalUsuario") 
+            or raw.get("emailUspUsuario") 
+            or raw.get("emailAlternativoUsuario") 
+            or (f"{codpes}@usp.br" if codpes.isdigit() else "")
+        )
         
         # Determinação do perfil
         is_admin = codpes in settings.admin_nusp_list
@@ -110,7 +124,7 @@ class USPOAuthService:
         # Verificar vínculos no retorno (Docente, Aluno, Funcionário)
         vinculos = raw.get("vinculo", [])
         if isinstance(vinculos, list):
-            tipos = [v.get("tipoVinculo", "").upper() for v in vinculos if isinstance(v, dict)]
+            tipos = [str(v.get("tipoVinculo", "")).upper() for v in vinculos if isinstance(v, dict)]
             if "DOCENTE" in tipos:
                 role = "docente" if not is_admin else "admin"
             elif any("ALUNO" in t for t in tipos):
