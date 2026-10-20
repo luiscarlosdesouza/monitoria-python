@@ -3,28 +3,111 @@
 {% block title %}Períodos Letivos - Monitoria IME-USP{% endblock %}
 
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-4">
+<!-- Cabeçalho Principal -->
+<div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-3">
     <div>
-        <h2 class="fw-bold mb-1"><i class="fa-solid fa-calendar-days text-primary me-2"></i> Períodos Letivos</h2>
-        <p class="text-muted mb-0">Gerencie os semestres, datas de editais, inscrições e atestos.</p>
+        <h2 class="fw-bold mb-1 text-dark">
+            <i class="fa-solid fa-calendar-days text-primary me-2"></i> Períodos Letivos & Editais
+        </h2>
+        <p class="text-secondary mb-0">
+            Gerencie os semestres acadêmicos, cronogramas de requisição dos docentes e períodos de inscrição de monitores.
+        </p>
     </div>
-    {% if user and user.role == 'admin' %}
-    <a href="/schoolterms/create" class="btn btn-usp">
-        <i class="fa-solid fa-plus me-1"></i> Novo Período
-    </a>
-    {% endif %}
+    <div class="d-flex gap-2">
+        <a href="/schoolterms/create" class="btn btn-usp fw-semibold px-3 py-2 shadow-sm">
+            <i class="fa-solid fa-plus me-1"></i> Novo Período Letivo
+        </a>
+    </div>
 </div>
 
-<div class="card card-custom p-0 overflow-hidden">
+<!-- Cards de Estatísticas -->
+<div class="row g-3 mb-4">
+    <div class="col-md-4">
+        <div class="card card-custom p-3 border-start border-4 border-primary">
+            <div class="d-flex align-items-center">
+                <div class="p-3 bg-primary bg-opacity-10 text-primary rounded-3 me-3">
+                    <i class="fa-solid fa-calendar-check fa-2x"></i>
+                </div>
+                <div>
+                    <h6 class="text-muted text-uppercase mb-1 small fw-bold">Total de Semestres</h6>
+                    <h3 class="fw-bold mb-0 text-dark">{{ stats.total_terms }}</h3>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card card-custom p-3 border-start border-4 border-success">
+            <div class="d-flex align-items-center">
+                <div class="p-3 bg-success bg-opacity-10 text-success rounded-3 me-3">
+                    <i class="fa-solid fa-door-open fa-2x"></i>
+                </div>
+                <div>
+                    <h6 class="text-muted text-uppercase mb-1 small fw-bold">Semestres Ativos</h6>
+                    <h3 class="fw-bold mb-0 text-dark">{{ stats.active_terms }}</h3>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card card-custom p-3 border-start border-4 border-info">
+            <div class="d-flex align-items-center">
+                <div class="p-3 bg-info bg-opacity-10 text-info rounded-3 me-3">
+                    <i class="fa-solid fa-chalkboard-user fa-2x"></i>
+                </div>
+                <div>
+                    <h6 class="text-muted text-uppercase mb-1 small fw-bold">Turmas Vinculadas</h6>
+                    <h3 class="fw-bold mb-0 text-dark">{{ stats.total_classes }}</h3>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Filtros -->
+<div class="card card-custom p-3 mb-4 bg-white">
+    <form method="GET" action="/schoolterms" class="row g-2 align-items-end">
+        <div class="col-md-4">
+            <label class="form-label small fw-semibold text-secondary mb-1">Filtrar por Ano</label>
+            <select name="year" class="form-select form-select-sm">
+                <option value="">Todos os anos</option>
+                {% for y in available_years %}
+                    <option value="{{ y }}" {% if selected_year == y %}selected{% endif %}>{{ y }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-4">
+            <label class="form-label small fw-semibold text-secondary mb-1">Status do Semestre</label>
+            <select name="status" class="form-select form-select-sm">
+                <option value="">Todos os status</option>
+                <option value="Aberto" {% if selected_status == 'Aberto' %}selected{% endif %}>Aberto</option>
+                <option value="Em Andamento" {% if selected_status == 'Em Andamento' %}selected{% endif %}>Em Andamento</option>
+                <option value="Finalizado" {% if selected_status == 'Finalizado' %}selected{% endif %}>Finalizado</option>
+            </select>
+        </div>
+        <div class="col-md-4 d-flex gap-2">
+            <button type="submit" class="btn btn-primary btn-sm w-100 fw-semibold">
+                <i class="fa-solid fa-filter me-1"></i> Filtrar
+            </button>
+            <a href="/schoolterms" class="btn btn-outline-secondary btn-sm" title="Limpar Filtros">
+                <i class="fa-solid fa-rotate-left"></i>
+            </a>
+        </div>
+    </form>
+</div>
+
+<!-- Tabela de Períodos -->
+<div class="card card-custom p-0 overflow-hidden shadow-sm">
     <div class="table-responsive">
         <table class="table table-hover align-middle mb-0">
             <thead class="table-light">
                 <tr>
-                    <th class="ps-4">Ano / Período</th>
+                    <th class="ps-4">Ano / Semestre</th>
                     <th>Status</th>
-                    <th>Início Aulas</th>
-                    <th>Fim Aulas</th>
-                    <th>Máx. Inscrições</th>
+                    <th>Requisições Docentes</th>
+                    <th>Inscrições Alunos</th>
+                    <th>Aulas</th>
+                    <th>Limite</th>
+                    <th>Edital</th>
                     <th class="text-end pe-4">Ações</th>
                 </tr>
             </thead>
@@ -32,34 +115,124 @@
                 {% if terms %}
                     {% for term in terms %}
                     <tr>
-                        <td class="ps-4 fw-semibold">
-                            <i class="fa-regular fa-calendar-check text-primary me-2"></i>
-                            {{ term.year }} - {{ term.period }}
+                        <td class="ps-4">
+                            <div class="fw-bold text-dark fs-6">
+                                <i class="fa-solid fa-calendar-check text-primary me-2"></i>
+                                {{ term.year }} &mdash; {{ term.period }}
+                            </div>
+                            <div class="smaller text-muted mt-1">
+                                {{ term.school_classes|length }} turma(s) cadastrada(s)
+                            </div>
                         </td>
                         <td>
                             {% if term.status == 'Aberto' %}
-                                <span class="badge bg-success-subtle text-success px-2 py-1 rounded-pill">Aberto</span>
+                                <span class="badge bg-success-subtle text-success px-2.5 py-1.5 rounded-pill fw-semibold">
+                                    <i class="fa-solid fa-circle-dot me-1"></i> Aberto
+                                </span>
                             {% elif term.status == 'Em Andamento' %}
-                                <span class="badge bg-primary-subtle text-primary px-2 py-1 rounded-pill">Em Andamento</span>
+                                <span class="badge bg-primary-subtle text-primary px-2.5 py-1.5 rounded-pill fw-semibold">
+                                    Em Andamento
+                                </span>
                             {% else %}
-                                <span class="badge bg-secondary-subtle text-secondary px-2 py-1 rounded-pill">{{ term.status }}</span>
+                                <span class="badge bg-secondary-subtle text-secondary px-2.5 py-1.5 rounded-pill">
+                                    {{ term.status }}
+                                </span>
                             {% endif %}
                         </td>
-                        <td>{{ term.started_at.strftime('%d/%m/%Y') if term.started_at else 'Não informado' }}</td>
-                        <td>{{ term.finished_at.strftime('%d/%m/%Y') if term.finished_at else 'Não informado' }}</td>
-                        <td>{{ term.max_enrollments }} por aluno</td>
-                        <td class="text-end pe-4">
-                            <a href="/schoolterms/{{ term.id }}" class="btn btn-sm btn-outline-primary">
-                                <i class="fa-solid fa-eye me-1"></i> Detalhes
+                        <td class="small">
+                            {% if term.start_date_requisitions and term.end_date_requisitions %}
+                                <div>{{ term.start_date_requisitions.strftime('%d/%m') }} a {{ term.end_date_requisitions.strftime('%d/%m/%Y') }}</div>
+                                {% if now >= term.start_date_requisitions and now <= term.end_date_requisitions %}
+                                    <span class="badge bg-warning-subtle text-warning-emphasis smaller">Fase Aberta</span>
+                                {% endif %}
+                            {% else %}
+                                <span class="text-muted fst-italic">-</span>
+                            {% endif %}
+                        </td>
+                        <td class="small">
+                            {% if term.start_date_enrollments and term.end_date_enrollments %}
+                                <div>{{ term.start_date_enrollments.strftime('%d/%m') }} a {{ term.end_date_enrollments.strftime('%d/%m/%Y') }}</div>
+                                {% if now >= term.start_date_enrollments and now <= term.end_date_enrollments %}
+                                    <span class="badge bg-success-subtle text-success smaller">Inscrições Abertas</span>
+                                {% endif %}
+                            {% else %}
+                                <span class="text-muted fst-italic">-</span>
+                            {% endif %}
+                        </td>
+                        <td class="small">
+                            {% if term.started_at and term.finished_at %}
+                                {{ term.started_at.strftime('%d/%m') }} a {{ term.finished_at.strftime('%d/%m/%Y') }}
+                            {% else %}
+                                <span class="text-muted fst-italic">-</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <span class="badge bg-light text-dark border">
+                                até {{ term.max_enrollments }} turmas
+                            </span>
+                        </td>
+                        <td>
+                            {% if term.public_notice_file_path %}
+                                <a href="{{ term.public_notice_file_path }}" target="_blank" class="btn btn-outline-danger btn-sm py-1 px-2" title="Abrir Edital em PDF">
+                                    <i class="fa-solid fa-file-pdf me-1"></i> Edital
+                                </a>
+                            {% else %}
+                                <span class="text-muted smaller fst-italic">Não anexado</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-end pe-4 text-nowrap">
+                            <a href="/schoolterms/{{ term.id }}" class="btn btn-sm btn-outline-primary me-1" title="Ver Detalhes">
+                                <i class="fa-solid fa-eye"></i>
                             </a>
+                            <a href="/schoolterms/{{ term.id }}/edit" class="btn btn-sm btn-outline-secondary me-1" title="Editar">
+                                <i class="fa-solid fa-pen-to-square"></i>
+                            </a>
+                            <button type="button" class="btn btn-sm btn-outline-danger" title="Excluir"
+                                    data-bs-toggle="modal" data-bs-target="#deleteTermModal{{ term.id }}">
+                                <i class="fa-solid fa-trash"></i>
+                            </button>
+
+                            <!-- Modal Confirmação Exclusão -->
+                            <div class="modal fade" id="deleteTermModal{{ term.id }}" tabindex="-1" aria-hidden="true">
+                                <div class="modal-dialog modal-dialog-centered text-start">
+                                    <div class="modal-content">
+                                        <div class="modal-header border-0 pb-0">
+                                            <h5 class="modal-title fw-bold text-danger">
+                                                <i class="fa-solid fa-triangle-exclamation me-2"></i> Confirmar Exclusão
+                                            </h5>
+                                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+                                        </div>
+                                        <div class="modal-body py-3">
+                                            Tem certeza que deseja excluir o período letivo <strong>{{ term.year }} - {{ term.period }}</strong>?
+                                            <p class="text-muted small mt-2 mb-0">
+                                                A exclusão removerá todas as turmas, pedidos e inscrições associadas a este período.
+                                            </p>
+                                        </div>
+                                        <div class="modal-footer border-0 pt-0">
+                                            <button type="button" class="btn btn-light btn-sm" data-bs-dismiss="modal">Cancelar</button>
+                                            <form action="/schoolterms/{{ term.id }}/delete" method="POST" class="d-inline">
+                                                <button type="submit" class="btn btn-danger btn-sm fw-semibold">
+                                                    Sim, Excluir Período
+                                                </button>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                         </td>
                     </tr>
                     {% endfor %}
                 {% else %}
                     <tr>
-                        <td colspan="6" class="text-center py-5 text-muted">
-                            <i class="fa-regular fa-folder-open fa-3x mb-3 d-block opacity-50"></i>
-                            Nenhum período letivo cadastrado no momento.
+                        <td colspan="8" class="text-center py-5 text-muted">
+                            <div class="py-4">
+                                <i class="fa-regular fa-calendar-xmark fa-3x mb-3 text-secondary opacity-50"></i>
+                                <h5 class="fw-semibold text-secondary">Nenhum período letivo encontrado</h5>
+                                <p class="text-muted small mb-3">Cadastre um novo período acadêmico para iniciar o gerenciamento das monitorias.</p>
+                                <a href="/schoolterms/create" class="btn btn-usp btn-sm fw-semibold">
+                                    <i class="fa-solid fa-plus me-1"></i> Cadastrar Período
+                                </a>
+                            </div>
                         </td>
                     </tr>
                 {% endif %}

@@ -1,0 +1,174 @@
+{% extends "base.html" %}
+
+{% block title %}Editar Período Letivo - {{ term.year }}/{{ term.period }} - IME-USP{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-9 col-xl-8">
+        <!-- Navegação Breadcrumb -->
+        <nav aria-label="breadcrumb" class="mb-3">
+            <ol class="breadcrumb small">
+                <li class="breadcrumb-item"><a href="/" class="text-decoration-none">Início</a></li>
+                <li class="breadcrumb-item"><a href="/schoolterms" class="text-decoration-none">Períodos Letivos</a></li>
+                <li class="breadcrumb-item"><a href="/schoolterms/{{ term.id }}" class="text-decoration-none">{{ term.year }}/{{ term.period }}</a></li>
+                <li class="breadcrumb-item active" aria-current="page">Editar Período</li>
+            </ol>
+        </nav>
+
+        <div class="card card-custom p-4 shadow-sm mb-5">
+            <div class="d-flex align-items-center pb-3 mb-4 border-bottom">
+                <div class="p-3 bg-primary bg-opacity-10 text-primary rounded-3 me-3">
+                    <i class="fa-solid fa-pen-to-square fa-2x"></i>
+                </div>
+                <div>
+                    <h3 class="fw-bold mb-1 text-dark">Editar Período Letivo</h3>
+                    <p class="text-muted mb-0 small">
+                        Modifique o status, datas de cronograma para pedidos de docentes, inscrições e edital.
+                    </p>
+                </div>
+            </div>
+
+            <form action="/schoolterms/{{ term.id }}/edit" method="POST" enctype="multipart/form-data">
+                <!-- Seção 1: Identificação -->
+                <div class="row g-3 mb-4">
+                    <div class="col-md-4">
+                        <label class="form-label fw-semibold text-dark">
+                            Ano <span class="text-danger">*</span>
+                        </label>
+                        <input type="number" name="year" class="form-control" value="{{ term.year }}" min="2020" max="2050" required>
+                    </div>
+
+                    <div class="col-md-4">
+                        <label class="form-label fw-semibold text-dark">
+                            Período / Semestre <span class="text-danger">*</span>
+                        </label>
+                        <select name="period" class="form-select" required>
+                            <option value="1º Semestre" {% if term.period == '1º Semestre' %}selected{% endif %}>1º Semestre</option>
+                            <option value="2º Semestre" {% if term.period == '2º Semestre' %}selected{% endif %}>2º Semestre</option>
+                            <option value="Semestre de Verão" {% if term.period == 'Semestre de Verão' %}selected{% endif %}>Semestre de Verão</option>
+                        </select>
+                    </div>
+
+                    <div class="col-md-4">
+                        <label class="form-label fw-semibold text-dark">
+                            Status do Semestre
+                        </label>
+                        <select name="status" class="form-select">
+                            <option value="Aberto" {% if term.status == 'Aberto' %}selected{% endif %}>Aberto (Em fase de inscrições)</option>
+                            <option value="Em Andamento" {% if term.status == 'Em Andamento' %}selected{% endif %}>Em Andamento (Aulas vigentes)</option>
+                            <option value="Finalizado" {% if term.status == 'Finalizado' %}selected{% endif %}>Finalizado</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Seção 2: Cronogramas Oficiais -->
+                <div class="card p-3 mb-4 bg-light border">
+                    <h6 class="fw-bold text-dark mb-3">
+                        <i class="fa-solid fa-clock-rotate-left text-warning me-2"></i> Cronograma do Processo Seletivo
+                    </h6>
+
+                    <!-- Fase 1: Pedidos dos Docentes -->
+                    <div class="row g-3 mb-3">
+                        <div class="col-12">
+                            <span class="small fw-bold text-primary">Fase 1: Pedidos de Monitoria por Docentes</span>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small text-muted mb-1">Data Início Requisições</label>
+                            <input type="date" name="start_date_requisitions" class="form-control"
+                                   value="{{ term.start_date_requisitions.strftime('%Y-%m-%d') if term.start_date_requisitions else '' }}">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small text-muted mb-1">Data Fim Requisições</label>
+                            <input type="date" name="end_date_requisitions" class="form-control"
+                                   value="{{ term.end_date_requisitions.strftime('%Y-%m-%d') if term.end_date_requisitions else '' }}">
+                        </div>
+                    </div>
+
+                    <!-- Fase 2: Inscrições dos Alunos -->
+                    <div class="row g-3 mb-3 pt-2 border-top">
+                        <div class="col-12">
+                            <span class="small fw-bold text-success">Fase 2: Inscrições de Estudantes</span>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small text-muted mb-1">Data Início Inscrições</label>
+                            <input type="date" name="start_date_enrollments" class="form-control"
+                                   value="{{ term.start_date_enrollments.strftime('%Y-%m-%d') if term.start_date_enrollments else '' }}">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small text-muted mb-1">Data Fim Inscrições</label>
+                            <input type="date" name="end_date_enrollments" class="form-control"
+                                   value="{{ term.end_date_enrollments.strftime('%Y-%m-%d') if term.end_date_enrollments else '' }}">
+                        </div>
+                    </div>
+
+                    <!-- Fase 3: Aulas -->
+                    <div class="row g-3 pt-2 border-top">
+                        <div class="col-12">
+                            <span class="small fw-bold text-dark">Fase 3: Vigência das Aulas e Monitorias</span>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small text-muted mb-1">Início das Aulas</label>
+                            <input type="date" name="started_at" class="form-control"
+                                   value="{{ term.started_at.strftime('%Y-%m-%d') if term.started_at else '' }}">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small text-muted mb-1">Término das Aulas</label>
+                            <input type="date" name="finished_at" class="form-control"
+                                   value="{{ term.finished_at.strftime('%Y-%m-%d') if term.finished_at else '' }}">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Seção 3: Regras e Edital -->
+                <div class="row g-3 mb-4">
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold text-dark">
+                            Limite de Inscrições por Aluno
+                        </label>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="fa-solid fa-list-ol"></i></span>
+                            <input type="number" name="max_enrollments" class="form-control" 
+                                   value="{{ term.max_enrollments }}" min="1" max="10" required>
+                        </div>
+                    </div>
+
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold text-dark">
+                            Mês de Avaliação
+                        </label>
+                        <input type="text" name="evaluation_period" class="form-control" 
+                               value="{{ term.evaluation_period or '' }}" placeholder="Ex: Julho/2026">
+                    </div>
+                </div>
+
+                <!-- Edital em PDF -->
+                <div class="mb-4">
+                    <label class="form-label fw-semibold text-dark mb-1">
+                        Edital Oficial em PDF
+                    </label>
+                    <div class="input-group">
+                        <input type="file" name="notice_file" class="form-control" accept=".pdf">
+                        <span class="input-group-text"><i class="fa-solid fa-file-pdf text-danger"></i></span>
+                    </div>
+                    {% if term.public_notice_file_path %}
+                        <div class="mt-2 small text-success">
+                            <i class="fa-solid fa-circle-check me-1"></i>
+                            Arquivo atual anexado: <a href="{{ term.public_notice_file_path }}" target="_blank" class="fw-semibold text-success text-decoration-underline">ver edital PDF</a>. O envio de um novo arquivo substituirá o anterior.
+                        </div>
+                    {% endif %}
+                </div>
+
+                <!-- Botões de Ação -->
+                <div class="d-flex justify-content-end gap-2 pt-3 border-top">
+                    <a href="/schoolterms/{{ term.id }}" class="btn btn-outline-secondary px-4 fw-semibold">
+                        Cancelar
+                    </a>
+                    <button type="submit" class="btn btn-primary px-4 fw-bold shadow-sm">
+                        <i class="fa-solid fa-check me-1"></i> Salvar Alterações
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

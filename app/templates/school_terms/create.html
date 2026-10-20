@@ -1,0 +1,164 @@
+{% extends "base.html" %}
+
+{% block title %}Novo Período Letivo - IME-USP{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-9 col-xl-8">
+        <!-- Navegação Breadcrumb -->
+        <nav aria-label="breadcrumb" class="mb-3">
+            <ol class="breadcrumb small">
+                <li class="breadcrumb-item"><a href="/" class="text-decoration-none">Início</a></li>
+                <li class="breadcrumb-item"><a href="/schoolterms" class="text-decoration-none">Períodos Letivos</a></li>
+                <li class="breadcrumb-item active" aria-current="page">Novo Período</li>
+            </ol>
+        </nav>
+
+        <div class="card card-custom p-4 shadow-sm mb-5">
+            <div class="d-flex align-items-center pb-3 mb-4 border-bottom">
+                <div class="p-3 bg-primary bg-opacity-10 text-primary rounded-3 me-3">
+                    <i class="fa-solid fa-calendar-plus fa-2x"></i>
+                </div>
+                <div>
+                    <h3 class="fw-bold mb-1 text-dark">Cadastrar Novo Período Letivo</h3>
+                    <p class="text-muted mb-0 small">
+                        Configure o semestre acadêmico, cronogramas de requisição dos docentes, inscrições de estudantes e edital.
+                    </p>
+                </div>
+            </div>
+
+            <form action="/schoolterms/create" method="POST" enctype="multipart/form-data">
+                <!-- Seção 1: Identificação do Semestre -->
+                <div class="row g-3 mb-4">
+                    <div class="col-md-4">
+                        <label class="form-label fw-semibold text-dark">
+                            Ano <span class="text-danger">*</span>
+                        </label>
+                        <input type="number" name="year" class="form-control" value="{{ current_year }}" min="2020" max="2050" required>
+                    </div>
+
+                    <div class="col-md-4">
+                        <label class="form-label fw-semibold text-dark">
+                            Período / Semestre <span class="text-danger">*</span>
+                        </label>
+                        <select name="period" class="form-select" required>
+                            <option value="1º Semestre" selected>1º Semestre</option>
+                            <option value="2º Semestre">2º Semestre</option>
+                            <option value="Semestre de Verão">Semestre de Verão</option>
+                        </select>
+                    </div>
+
+                    <div class="col-md-4">
+                        <label class="form-label fw-semibold text-dark">
+                            Status Inicial
+                        </label>
+                        <select name="status" class="form-select">
+                            <option value="Aberto" selected>Aberto (Recebendo solicitações/inscrições)</option>
+                            <option value="Em Andamento">Em Andamento (Aulas iniciadas)</option>
+                            <option value="Finalizado">Finalizado</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Seção 2: Cronogramas Oficiais -->
+                <div class="card p-3 mb-4 bg-light border">
+                    <h6 class="fw-bold text-dark mb-3">
+                        <i class="fa-solid fa-clock-rotate-left text-warning me-2"></i> Cronograma do Processo Seletivo
+                    </h6>
+
+                    <!-- Fase 1: Pedidos dos Docentes -->
+                    <div class="row g-3 mb-3">
+                        <div class="col-12">
+                            <span class="small fw-bold text-primary">Fase 1: Pedidos de Monitoria pelos Docentes</span>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small text-muted mb-1">Data Início Requisições</label>
+                            <input type="date" name="start_date_requisitions" class="form-control">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small text-muted mb-1">Data Fim Requisições</label>
+                            <input type="date" name="end_date_requisitions" class="form-control">
+                        </div>
+                    </div>
+
+                    <!-- Fase 2: Inscrições dos Alunos -->
+                    <div class="row g-3 mb-3 pt-2 border-top">
+                        <div class="col-12">
+                            <span class="small fw-bold text-success">Fase 2: Inscrições de Candidatos (Estudantes)</span>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small text-muted mb-1">Data Início Inscrições</label>
+                            <input type="date" name="start_date_enrollments" class="form-control">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small text-muted mb-1">Data Fim Inscrições</label>
+                            <input type="date" name="end_date_enrollments" class="form-control">
+                        </div>
+                    </div>
+
+                    <!-- Fase 3: Período de Aulas -->
+                    <div class="row g-3 pt-2 border-top">
+                        <div class="col-12">
+                            <span class="small fw-bold text-dark">Fase 3: Vigência do Semestre e Aulas</span>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small text-muted mb-1">Início das Aulas</label>
+                            <input type="date" name="started_at" class="form-control">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small text-muted mb-1">Término das Aulas</label>
+                            <input type="date" name="finished_at" class="form-control">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Seção 3: Regras e Edital -->
+                <div class="row g-3 mb-4">
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold text-dark">
+                            Limite de Inscrições por Aluno
+                        </label>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="fa-solid fa-list-ol"></i></span>
+                            <input type="number" name="max_enrollments" class="form-control" value="3" min="1" max="10" required>
+                        </div>
+                        <div class="form-text small">Número máximo de turmas que cada estudante pode se candidatar no semestre.</div>
+                    </div>
+
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold text-dark">
+                            Mês de Avaliação (Opcional)
+                        </label>
+                        <input type="text" name="evaluation_period" class="form-control" placeholder="Ex: Julho/2026">
+                        <div class="form-text small">Período de avaliação de desempenho dos monitores.</div>
+                    </div>
+                </div>
+
+                <!-- Upload do Edital Oficial -->
+                <div class="mb-4">
+                    <label class="form-label fw-semibold text-dark mb-1">
+                        Edital Oficial em PDF (Opcional)
+                    </label>
+                    <div class="input-group">
+                        <input type="file" name="notice_file" class="form-control" accept=".pdf">
+                        <span class="input-group-text"><i class="fa-solid fa-file-pdf text-danger"></i></span>
+                    </div>
+                    <div class="form-text small">
+                        Anexe o edital da Congregação / Comissão de Graduação com as regras de monitoria do semestre.
+                    </div>
+                </div>
+
+                <!-- Botões de Ação -->
+                <div class="d-flex justify-content-end gap-2 pt-3 border-top">
+                    <a href="/schoolterms" class="btn btn-outline-secondary px-4 fw-semibold">
+                        Cancelar
+                    </a>
+                    <button type="submit" class="btn btn-usp px-4 fw-bold shadow-sm">
+                        <i class="fa-solid fa-check me-1"></i> Cadastrar Período Letivo
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
