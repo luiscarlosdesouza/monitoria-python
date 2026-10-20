@@ -1,0 +1,134 @@
+{% extends "base.html" %}
+
+{% block title %}Editar Pedido de Monitoria - {{ req.school_class.coddis }} - IME-USP{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-9 col-xl-8">
+        <!-- Navegação Breadcrumb -->
+        <nav aria-label="breadcrumb" class="mb-3">
+            <ol class="breadcrumb small">
+                <li class="breadcrumb-item"><a href="/" class="text-decoration-none">Início</a></li>
+                <li class="breadcrumb-item"><a href="/requisitions" class="text-decoration-none">Pedidos de Monitoria</a></li>
+                <li class="breadcrumb-item"><a href="/requisitions/{{ req.id }}" class="text-decoration-none">{{ req.school_class.coddis }}</a></li>
+                <li class="breadcrumb-item active" aria-current="page">Editar Pedido</li>
+            </ol>
+        </nav>
+
+        <div class="card card-custom p-4 shadow-sm mb-5">
+            <div class="d-flex align-items-center pb-3 mb-4 border-bottom">
+                <div class="p-3 bg-primary bg-opacity-10 text-primary rounded-3 me-3">
+                    <i class="fa-solid fa-pen-to-square fa-2x"></i>
+                </div>
+                <div>
+                    <h3 class="fw-bold mb-1 text-dark">Editar Solicitação de Monitoria</h3>
+                    <p class="text-muted mb-0 small">
+                        Atualize a quantidade de vagas, atividades previstas ou alunos recomendados para a turma.
+                    </p>
+                </div>
+            </div>
+
+            <!-- Resumo da Turma e Docente (Fixos na edição) -->
+            <div class="row g-3 mb-4 p-3 bg-light rounded-3 border">
+                <div class="col-md-7">
+                    <span class="text-muted small d-block">Disciplina & Turma</span>
+                    <strong class="text-primary fs-6">{{ req.school_class.coddis }} &mdash; {{ req.school_class.nomdis }}</strong>
+                    <div class="small text-muted">Turma {{ req.school_class.codtur }} ({{ req.school_class.department.nomabvset if req.school_class.department else 'IME' }})</div>
+                </div>
+                <div class="col-md-5">
+                    <span class="text-muted small d-block">Docente Solicitante</span>
+                    <strong class="text-dark fs-6">{{ req.instructor.nompes if req.instructor else 'Docente não informado' }}</strong>
+                    <div class="small text-muted">NUSP: {{ req.instructor.codpes if req.instructor else '-' }}</div>
+                </div>
+            </div>
+
+            <form action="/requisitions/{{ req.id }}/edit" method="POST">
+                <!-- Vagas e Prioridade -->
+                <div class="row g-3 mb-4">
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold text-dark">
+                            Número de Monitores Solicitados <span class="text-danger">*</span>
+                        </label>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="fa-solid fa-users"></i></span>
+                            <input type="number" name="requested_number" class="form-control" min="1" max="15" 
+                                   value="{{ req.requested_number }}" required>
+                        </div>
+                        <div class="form-text small">Quantidade ideal de monitores necessários.</div>
+                    </div>
+
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold text-dark">
+                            Prioridade da Solicitação
+                        </label>
+                        <select name="priority" class="form-select">
+                            <option value="Alta" {% if req.priority == 'Alta' %}selected{% endif %}>Alta (Turma volumosa ou disciplinas fundamentais)</option>
+                            <option value="Normal" {% if req.priority == 'Normal' %}selected{% endif %}>Normal</option>
+                            <option value="Baixa" {% if req.priority == 'Baixa' %}selected{% endif %}>Baixa</option>
+                        </select>
+                        <div class="form-text small">Usado na distribuição de cotas de bolsas.</div>
+                    </div>
+                </div>
+
+                <!-- Atividades Previstas -->
+                <div class="mb-4">
+                    <label class="form-label fw-semibold text-dark d-block mb-2">
+                        Atividades Previstas para os Monitores
+                    </label>
+                    <div class="bg-light p-3 rounded-3 border">
+                        {% if activities %}
+                            <div class="row g-2">
+                                {% for act in activities %}
+                                <div class="col-md-6">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" name="activity_ids" 
+                                               value="{{ act.id }}" id="act{{ act.id }}"
+                                               {% if act.id in selected_activity_ids %}checked{% endif %}>
+                                        <label class="form-check-label small" for="act{{ act.id }}">
+                                            {{ act.description }}
+                                        </label>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        {% else %}
+                            <p class="text-muted small mb-0">Nenhuma atividade pré-cadastrada no sistema.</p>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Recomendação de Alunos -->
+                <div class="mb-4">
+                    <label class="form-label fw-semibold text-dark mb-1">
+                        Indicação / Recomendação de Alunos
+                    </label>
+                    <textarea name="recommended_students" class="form-control font-monospace" rows="3" 
+                              placeholder="Digite o Número USP e Nome dos alunos indicados (um por linha):&#10;Ex: 1234567 - Maria Silva">{{ recommendations_str }}</textarea>
+                    <div class="form-text small">
+                        Alunos recomendados pelo docente terão a indicação sinalizada no momento da classificação e seleção.
+                    </div>
+                </div>
+
+                <!-- Observações e Justificativas -->
+                <div class="mb-4">
+                    <label class="form-label fw-semibold text-dark mb-1">
+                        Observações e Justificativas da Solicitação
+                    </label>
+                    <textarea name="comments" class="form-control" rows="3" 
+                              placeholder="Descreva detalhes específicos da turma, horários de plantão, etc.">{{ req.comments or '' }}</textarea>
+                </div>
+
+                <!-- Botões de Ação -->
+                <div class="d-flex justify-content-end gap-2 pt-3 border-top">
+                    <a href="/requisitions/{{ req.id }}" class="btn btn-outline-secondary px-4 fw-semibold">
+                        Cancelar
+                    </a>
+                    <button type="submit" class="btn btn-primary px-4 fw-bold shadow-sm">
+                        <i class="fa-solid fa-check me-1"></i> Salvar Alterações
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

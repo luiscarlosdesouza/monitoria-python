@@ -58,6 +58,99 @@ def run_seeds():
                 end_date_enrollments=datetime(2026, 2, 28)
             )
             db.add(term)
+            db.flush()
+
+        # 5. Docentes Iniciais (se não existirem)
+        dept_mac = db.query(Department).filter(Department.nomabvset == "MAC").first()
+        dept_mat = db.query(Department).filter(Department.nomabvset == "MAT").first()
+        dept_mae = db.query(Department).filter(Department.nomabvset == "MAE").first()
+
+        inst_data = [
+            {"codpes": "7762448", "nompes": "Luis Carlos de Souza", "codema": "luiscarlos@ime.usp.br", "department_id": dept_mac.id if dept_mac else 1},
+            {"codpes": "2803642", "nompes": "Prof. Dr. Alfredo Goldman", "codema": "gold@ime.usp.br", "department_id": dept_mac.id if dept_mac else 1},
+            {"codpes": "5085616", "nompes": "Profa. Dra. Cristina Gomes Fernandes", "codema": "cris@ime.usp.br", "department_id": dept_mac.id if dept_mac else 1},
+            {"codpes": "1002001", "nompes": "Prof. Dr. Severino Toscano", "codema": "toscano@ime.usp.br", "department_id": dept_mat.id if dept_mat else 2},
+            {"codpes": "1002002", "nompes": "Profa. Dra. Nancy Garcia", "codema": "nancy@ime.usp.br", "department_id": dept_mae.id if dept_mae else 3},
+        ]
+        for item in inst_data:
+            if not db.query(Instructor).filter(Instructor.codpes == item["codpes"]).first():
+                db.add(Instructor(**item))
+        db.flush()
+
+        # 6. Turmas Iniciais (se não existirem)
+        if db.query(SchoolClass).count() == 0 and term:
+            classes_data = [
+                {
+                    "school_term_id": term.id,
+                    "department_id": dept_mac.id if dept_mac else 1,
+                    "coddis": "MAC0110",
+                    "nomdis": "Introdução à Computação",
+                    "codtur": "45",
+                    "tiptur": "Teórica",
+                    "dtainitur": datetime(2026, 2, 23),
+                    "dtafimtur": datetime(2026, 7, 10),
+                },
+                {
+                    "school_term_id": term.id,
+                    "department_id": dept_mac.id if dept_mac else 1,
+                    "coddis": "MAC0110",
+                    "nomdis": "Introdução à Computação",
+                    "codtur": "46",
+                    "tiptur": "Teórica/Prática",
+                    "dtainitur": datetime(2026, 2, 23),
+                    "dtafimtur": datetime(2026, 7, 10),
+                },
+                {
+                    "school_term_id": term.id,
+                    "department_id": dept_mac.id if dept_mac else 1,
+                    "coddis": "MAC0121",
+                    "nomdis": "Estruturas de Dados",
+                    "codtur": "04",
+                    "tiptur": "Teórica",
+                    "dtainitur": datetime(2026, 2, 23),
+                    "dtafimtur": datetime(2026, 7, 10),
+                },
+                {
+                    "school_term_id": term.id,
+                    "department_id": dept_mat.id if dept_mat else 2,
+                    "coddis": "MAT0111",
+                    "nomdis": "Cálculo Diferencial e Integral I",
+                    "codtur": "21",
+                    "tiptur": "Teórica",
+                    "dtainitur": datetime(2026, 2, 23),
+                    "dtafimtur": datetime(2026, 7, 10),
+                },
+                {
+                    "school_term_id": term.id,
+                    "department_id": dept_mae.id if dept_mae else 3,
+                    "coddis": "MAE0119",
+                    "nomdis": "Introdução à Probabilidade e Estatística I",
+                    "codtur": "01",
+                    "tiptur": "Teórica",
+                    "dtainitur": datetime(2026, 2, 23),
+                    "dtafimtur": datetime(2026, 7, 10),
+                },
+            ]
+            for c in classes_data:
+                sc = SchoolClass(**c)
+                db.add(sc)
+            db.flush()
+
+            # Vincula docentes às turmas
+            inst_gold = db.query(Instructor).filter(Instructor.codpes == "2803642").first()
+            inst_cris = db.query(Instructor).filter(Instructor.codpes == "5085616").first()
+            inst_toscano = db.query(Instructor).filter(Instructor.codpes == "1002001").first()
+
+            class_mac110 = db.query(SchoolClass).filter(SchoolClass.coddis == "MAC0110", SchoolClass.codtur == "45").first()
+            class_mac121 = db.query(SchoolClass).filter(SchoolClass.coddis == "MAC0121").first()
+            class_mat111 = db.query(SchoolClass).filter(SchoolClass.coddis == "MAT0111").first()
+
+            if class_mac110 and inst_gold:
+                class_mac110.instructors.append(inst_gold)
+            if class_mac121 and inst_cris:
+                class_mac121.instructors.append(inst_cris)
+            if class_mat111 and inst_toscano:
+                class_mat111.instructors.append(inst_toscano)
 
         db.commit()
     except Exception as e:

@@ -3,52 +3,246 @@
 {% block title %}Pedidos de Monitoria - IME-USP{% endblock %}
 
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-4">
+<!-- Cabeçalho -->
+<div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-3">
     <div>
-        <h2 class="fw-bold mb-1"><i class="fa-solid fa-clipboard-list text-warning me-2"></i> Pedidos de Monitoria</h2>
-        <p class="text-muted mb-0">Solicitações de monitores realizadas pelos docentes das turmas.</p>
+        <h2 class="fw-bold mb-1 text-dark">
+            <i class="fa-solid fa-clipboard-list text-warning me-2"></i> Pedidos de Monitoria
+        </h2>
+        <p class="text-secondary mb-0">
+            Gerenciamento das solicitações de monitores realizadas pelos docentes das turmas.
+        </p>
     </div>
-    <a href="/requisitions/create" class="btn btn-warning fw-semibold">
-        <i class="fa-solid fa-plus me-1"></i> Fazer Pedido
-    </a>
+    <div class="d-flex gap-2">
+        <a href="/requisitions/create" class="btn btn-warning fw-semibold px-3 py-2 shadow-sm">
+            <i class="fa-solid fa-plus me-1"></i> Fazer Pedido de Monitoria
+        </a>
+    </div>
 </div>
 
-<div class="card card-custom p-0 overflow-hidden">
+<!-- Cards de Estatísticas -->
+<div class="row g-3 mb-4">
+    <div class="col-md-4">
+        <div class="card card-custom p-3 border-start border-4 border-primary">
+            <div class="d-flex align-items-center">
+                <div class="p-3 bg-primary bg-opacity-10 text-primary rounded-3 me-3">
+                    <i class="fa-solid fa-list-check fa-2x"></i>
+                </div>
+                <div>
+                    <h6 class="text-muted text-uppercase mb-1 small fw-bold">Pedidos Registrados</h6>
+                    <h3 class="fw-bold mb-0 text-dark">{{ stats.total_requests }}</h3>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card card-custom p-3 border-start border-4 border-success">
+            <div class="d-flex align-items-center">
+                <div class="p-3 bg-success bg-opacity-10 text-success rounded-3 me-3">
+                    <i class="fa-solid fa-user-graduate fa-2x"></i>
+                </div>
+                <div>
+                    <h6 class="text-muted text-uppercase mb-1 small fw-bold">Monitores Solicitados</h6>
+                    <h3 class="fw-bold mb-0 text-dark">{{ stats.total_monitors }}</h3>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card card-custom p-3 border-start border-4 border-warning">
+            <div class="d-flex align-items-center">
+                <div class="p-3 bg-warning bg-opacity-10 text-warning rounded-3 me-3">
+                    <i class="fa-solid fa-chalkboard-user fa-2x"></i>
+                </div>
+                <div>
+                    <h6 class="text-muted text-uppercase mb-1 small fw-bold">Turmas Atendidas</h6>
+                    <h3 class="fw-bold mb-0 text-dark">{{ stats.unique_classes }}</h3>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Filtros -->
+<div class="card card-custom mb-4 p-3 bg-white">
+    <form method="GET" action="/requisitions" class="row g-2 align-items-end">
+        <div class="col-md-4">
+            <label class="form-label small fw-semibold text-secondary mb-1">Período Letivo</label>
+            <select name="term_id" class="form-select form-select-sm">
+                <option value="">Todos os Períodos</option>
+                {% for t in terms %}
+                    <option value="{{ t.id }}" {% if selected_term_id == t.id %}selected{% endif %}>
+                        {{ t.year }}/{{ t.period }} ({{ t.status }})
+                    </option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-3">
+            <label class="form-label small fw-semibold text-secondary mb-1">Departamento</label>
+            <select name="department_id" class="form-select form-select-sm">
+                <option value="">Todos os Departamentos</option>
+                {% for d in departments %}
+                    <option value="{{ d.id }}" {% if selected_department_id == d.id %}selected{% endif %}>
+                        {{ d.nomabvset }} - {{ d.nomset }}
+                    </option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-3">
+            <label class="form-label small fw-semibold text-secondary mb-1">Prioridade</label>
+            <select name="priority" class="form-select form-select-sm">
+                <option value="">Todas</option>
+                <option value="Alta" {% if selected_priority == 'Alta' %}selected{% endif %}>Alta</option>
+                <option value="Média" {% if selected_priority == 'Média' %}selected{% endif %}>Média</option>
+                <option value="Normal" {% if selected_priority == 'Normal' %}selected{% endif %}>Normal</option>
+                <option value="Baixa" {% if selected_priority == 'Baixa' %}selected{% endif %}>Baixa</option>
+            </select>
+        </div>
+        <div class="col-md-2 d-flex gap-2">
+            <button type="submit" class="btn btn-primary btn-sm w-100 fw-semibold">
+                <i class="fa-solid fa-filter me-1"></i> Filtrar
+            </button>
+            <a href="/requisitions" class="btn btn-outline-secondary btn-sm" title="Limpar Filtros">
+                <i class="fa-solid fa-rotate-left"></i>
+            </a>
+        </div>
+    </form>
+</div>
+
+<!-- Tabela de Pedidos -->
+<div class="card card-custom p-0 overflow-hidden shadow-sm">
     <div class="table-responsive">
         <table class="table table-hover align-middle mb-0">
             <thead class="table-light">
                 <tr>
-                    <th class="ps-4">Disciplina / Turma</th>
+                    <th class="ps-4">Disciplina & Turma</th>
                     <th>Docente Solicitante</th>
-                    <th>Monitores Solicitados</th>
+                    <th>Período</th>
+                    <th class="text-center">Vagas</th>
                     <th>Prioridade</th>
-                    <th>Observações</th>
+                    <th>Atividades Previstas</th>
+                    <th class="text-center">Ações</th>
                 </tr>
             </thead>
             <tbody>
                 {% if requisitions %}
                     {% for r in requisitions %}
                     <tr>
-                        <td class="ps-4 fw-semibold text-primary">
-                            {{ r.school_class.coddis }} - Turma {{ r.school_class.codtur }}
+                        <td class="ps-4">
+                            <div class="fw-bold text-primary">{{ r.school_class.coddis }} - Turma {{ r.school_class.codtur }}</div>
+                            <div class="small text-muted">{{ r.school_class.nomdis or 'Sem título cadastrado' }}</div>
+                            <span class="badge bg-light text-dark border mt-1">
+                                {{ r.school_class.department.nomabvset if r.school_class.department else 'IME' }}
+                            </span>
                         </td>
-                        <td>{{ r.instructor.nompes if r.instructor else '-' }}</td>
-                        <td><span class="badge bg-primary rounded-pill px-3 py-2">{{ r.requested_number }}</span></td>
                         <td>
-                            {% if r.priority == 'Alta' %}
-                                <span class="badge bg-danger-subtle text-danger px-2 py-1 rounded-pill">Alta</span>
+                            <div class="fw-semibold text-dark">{{ r.instructor.nompes if r.instructor else 'Não atribuído' }}</div>
+                            <div class="small text-muted">NUSP: {{ r.instructor.codpes if r.instructor else '-' }}</div>
+                        </td>
+                        <td>
+                            {% if r.school_class.school_term %}
+                                <span class="badge bg-secondary-subtle text-secondary">
+                                    {{ r.school_class.school_term.year }}/{{ r.school_class.school_term.period }}
+                                </span>
                             {% else %}
-                                <span class="badge bg-secondary-subtle text-secondary px-2 py-1 rounded-pill">{{ r.priority }}</span>
+                                <span class="text-muted small">-</span>
                             {% endif %}
                         </td>
-                        <td class="small text-muted">{{ r.comments or '-' }}</td>
+                        <td class="text-center">
+                            <span class="badge bg-primary rounded-pill px-3 py-2 fs-6">
+                                {{ r.requested_number }}
+                            </span>
+                        </td>
+                        <td>
+                            {% if r.priority == 'Alta' %}
+                                <span class="badge bg-danger-subtle text-danger px-2.5 py-1.5 rounded-pill fw-semibold">
+                                    <i class="fa-solid fa-fire me-1"></i> Alta
+                                </span>
+                            {% elif r.priority == 'Média' %}
+                                <span class="badge bg-warning-subtle text-warning-emphasis px-2.5 py-1.5 rounded-pill fw-semibold">
+                                    Média
+                                </span>
+                            {% elif r.priority == 'Baixa' %}
+                                <span class="badge bg-secondary-subtle text-secondary px-2.5 py-1.5 rounded-pill">
+                                    Baixa
+                                </span>
+                            {% else %}
+                                <span class="badge bg-info-subtle text-info px-2.5 py-1.5 rounded-pill">
+                                    Normal
+                                </span>
+                            {% endif %}
+                        </td>
+                        <td style="max-width: 260px;">
+                            {% if r.activities %}
+                                <div class="d-flex flex-wrap gap-1">
+                                    {% for act in r.activities %}
+                                        <span class="badge bg-light text-secondary border small" title="{{ act.description }}">
+                                            {{ act.description[:28] }}{% if act.description|length > 28 %}...{% endif %}
+                                        </span>
+                                    {% endfor %}
+                                </div>
+                            {% else %}
+                                <span class="text-muted small italic">Nenhuma atividade especificada</span>
+                            {% endif %}
+
+                            {% if r.recommendations %}
+                                <div class="mt-1 small text-success fw-semibold">
+                                    <i class="fa-solid fa-user-check me-1"></i> {{ r.recommendations|length }} aluno(s) recomendado(s)
+                                </div>
+                            {% endif %}
+                        </td>
+                        <td class="text-center text-nowrap pe-3">
+                            <a href="/requisitions/{{ r.id }}" class="btn btn-outline-primary btn-sm me-1" title="Ver Detalhes">
+                                <i class="fa-solid fa-eye"></i>
+                            </a>
+                            <a href="/requisitions/{{ r.id }}/edit" class="btn btn-outline-secondary btn-sm me-1" title="Editar">
+                                <i class="fa-solid fa-pen-to-square"></i>
+                            </a>
+                            <button type="button" class="btn btn-outline-danger btn-sm" title="Excluir" 
+                                    data-bs-toggle="modal" data-bs-target="#deleteModal{{ r.id }}">
+                                <i class="fa-solid fa-trash"></i>
+                            </button>
+
+                            <!-- Modal de Confirmação de Exclusão -->
+                            <div class="modal fade" id="deleteModal{{ r.id }}" tabindex="-1" aria-hidden="true">
+                                <div class="modal-dialog modal-dialog-centered">
+                                    <div class="modal-content">
+                                        <div class="modal-header border-0 pb-0">
+                                            <h5 class="modal-title fw-bold text-danger">
+                                                <i class="fa-solid fa-triangle-exclamation me-2"></i> Confirmar Exclusão
+                                            </h5>
+                                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+                                        </div>
+                                        <div class="modal-body text-start py-3">
+                                            Tem certeza que deseja excluir o pedido de monitoria da disciplina 
+                                            <strong>{{ r.school_class.coddis }} (Turma {{ r.school_class.codtur }})</strong>?
+                                            <p class="text-muted small mt-2 mb-0">Esta ação cancelará a solicitação e removerá as recomendações associadas.</p>
+                                        </div>
+                                        <div class="modal-footer border-0 pt-0">
+                                            <button type="button" class="btn btn-light btn-sm" data-bs-dismiss="modal">Cancelar</button>
+                                            <form action="/requisitions/{{ r.id }}/delete" method="POST" class="d-inline">
+                                                <button type="submit" class="btn btn-danger btn-sm fw-semibold">
+                                                    Sim, Excluir Pedido
+                                                </button>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </td>
                     </tr>
                     {% endfor %}
                 {% else %}
                     <tr>
-                        <td colspan="5" class="text-center py-5 text-muted">
-                            <i class="fa-regular fa-clipboard fa-3x mb-3 d-block opacity-50"></i>
-                            Nenhuma solicitação de monitoria registrada no momento.
+                        <td colspan="7" class="text-center py-5 text-muted">
+                            <div class="py-4">
+                                <i class="fa-regular fa-clipboard fa-3x mb-3 text-secondary opacity-50"></i>
+                                <h5 class="fw-semibold text-secondary">Nenhum pedido de monitoria encontrado</h5>
+                                <p class="text-muted small mb-3">Não há solicitações cadastradas com os filtros selecionados.</p>
+                                <a href="/requisitions/create" class="btn btn-warning btn-sm fw-semibold">
+                                    <i class="fa-solid fa-plus me-1"></i> Fazer o Primeiro Pedido
+                                </a>
+                            </div>
                         </td>
                     </tr>
                 {% endif %}

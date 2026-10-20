@@ -1,0 +1,253 @@
+{% extends "base.html" %}
+
+{% block title %}Detalhes do Pedido - {{ req.school_class.coddis }} - IME-USP{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-10">
+        <!-- Navegação Breadcrumb -->
+        <nav aria-label="breadcrumb" class="mb-3">
+            <ol class="breadcrumb small">
+                <li class="breadcrumb-item"><a href="/" class="text-decoration-none">Início</a></li>
+                <li class="breadcrumb-item"><a href="/requisitions" class="text-decoration-none">Pedidos de Monitoria</a></li>
+                <li class="breadcrumb-item active" aria-current="page">{{ req.school_class.coddis }} (Turma {{ req.school_class.codtur }})</li>
+            </ol>
+        </nav>
+
+        <!-- Barra Superior com Ações -->
+        <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-2">
+            <div>
+                <span class="badge bg-primary-subtle text-primary fw-semibold px-3 py-1.5 rounded-pill mb-1">
+                    {{ req.school_class.department.nomabvset if req.school_class.department else 'IME' }} &bull; 
+                    {{ req.school_class.school_term.year }}/{{ req.school_class.school_term.period if req.school_class.school_term else '' }}
+                </span>
+                <h2 class="fw-bold mb-0 text-dark">
+                    {{ req.school_class.coddis }} &mdash; {{ req.school_class.nomdis }}
+                </h2>
+                <div class="text-muted small">Turma <strong>{{ req.school_class.codtur }}</strong> &bull; Tipo: {{ req.school_class.tiptur or 'Teórica' }}</div>
+            </div>
+            <div class="d-flex gap-2">
+                <a href="/requisitions" class="btn btn-outline-secondary btn-sm">
+                    <i class="fa-solid fa-arrow-left me-1"></i> Voltar
+                </a>
+                <a href="/requisitions/{{ req.id }}/edit" class="btn btn-outline-primary btn-sm fw-semibold">
+                    <i class="fa-solid fa-pen-to-square me-1"></i> Editar Pedido
+                </a>
+                <button type="button" class="btn btn-outline-danger btn-sm" data-bs-toggle="modal" data-bs-target="#deleteModal">
+                    <i class="fa-solid fa-trash me-1"></i> Excluir
+                </button>
+            </div>
+        </div>
+
+        <div class="row g-4 mb-4">
+            <!-- Painel Principal de Informações do Pedido -->
+            <div class="col-md-7">
+                <div class="card card-custom p-4 h-100 shadow-sm">
+                    <h5 class="fw-bold text-dark border-bottom pb-2 mb-3">
+                        <i class="fa-solid fa-circle-info text-primary me-2"></i> Detalhes da Solicitação
+                    </h5>
+
+                    <div class="row g-3 mb-3">
+                        <div class="col-6">
+                            <span class="text-muted small d-block">Vagas Solicitadas</span>
+                            <span class="fs-4 fw-bold text-primary">{{ req.requested_number }}</span> monitor(es)
+                        </div>
+                        <div class="col-6">
+                            <span class="text-muted small d-block">Prioridade do Pedido</span>
+                            {% if req.priority == 'Alta' %}
+                                <span class="badge bg-danger-subtle text-danger px-3 py-2 rounded-pill fw-semibold fs-6">
+                                    <i class="fa-solid fa-fire me-1"></i> Alta
+                                </span>
+                            {% elif req.priority == 'Média' %}
+                                <span class="badge bg-warning-subtle text-warning-emphasis px-3 py-2 rounded-pill fw-semibold fs-6">
+                                    Média
+                                </span>
+                            {% else %}
+                                <span class="badge bg-info-subtle text-info px-3 py-2 rounded-pill fw-semibold fs-6">
+                                    {{ req.priority }}
+                                </span>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Horários das Aulas -->
+                    <div class="mb-3">
+                        <span class="text-muted small d-block mb-1 fw-semibold">Horários da Turma:</span>
+                        {% if req.school_class.class_schedules %}
+                            <div class="d-flex flex-wrap gap-2">
+                                {% for sch in req.school_class.class_schedules %}
+                                    <span class="badge bg-light text-dark border p-2">
+                                        <i class="fa-regular fa-clock text-secondary me-1"></i>
+                                        {{ sch.diasmnocp }}: {{ sch.horent }} às {{ sch.horsai }}
+                                    </span>
+                                {% endfor %}
+                            </div>
+                        {% else %}
+                            <span class="text-muted small fst-italic">Horários não cadastrados no sistema.</span>
+                        {% endif %}
+                    </div>
+
+                    <!-- Atividades Previstas -->
+                    <div class="mb-3">
+                        <span class="text-muted small d-block mb-2 fw-semibold">Atividades Previstas para os Monitores:</span>
+                        {% if req.activities %}
+                            <div class="d-flex flex-wrap gap-2">
+                                {% for act in req.activities %}
+                                    <span class="badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25 px-2.5 py-2">
+                                        <i class="fa-solid fa-check text-primary me-1"></i> {{ act.description }}
+                                    </span>
+                                {% endfor %}
+                            </div>
+                        {% else %}
+                            <span class="text-muted small fst-italic">Nenhuma atividade especificada.</span>
+                        {% endif %}
+                    </div>
+
+                    <!-- Observações e Justificativas -->
+                    <div>
+                        <span class="text-muted small d-block mb-1 fw-semibold">Observações / Justificativa do Docente:</span>
+                        <div class="p-3 bg-light rounded-3 text-secondary small border">
+                            {{ req.comments or 'Nenhuma observação ou justificativa adicional registrada.' }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Painel Lateral: Docente e Recomendações -->
+            <div class="col-md-5">
+                <!-- Card Docente -->
+                <div class="card card-custom p-4 mb-4 shadow-sm">
+                    <h6 class="fw-bold text-dark border-bottom pb-2 mb-3">
+                        <i class="fa-solid fa-user-tie text-warning me-2"></i> Docente Responsável
+                    </h6>
+                    {% if req.instructor %}
+                        <div class="fw-bold text-dark fs-6">{{ req.instructor.nompes }}</div>
+                        <div class="small text-muted mb-2">Número USP: {{ req.instructor.codpes }}</div>
+                        <div class="small text-muted mb-1">
+                            <i class="fa-regular fa-envelope me-1"></i> {{ req.instructor.codema or 'E-mail não informado' }}
+                        </div>
+                        <div class="small text-muted">
+                            <i class="fa-solid fa-building-columns me-1"></i> 
+                            {{ req.instructor.department.nomset if req.instructor.department else 'IME-USP' }}
+                        </div>
+                    {% else %}
+                        <span class="text-muted small">Nenhum docente associado diretamente.</span>
+                    {% endif %}
+                </div>
+
+                <!-- Card Alunos Recomendados -->
+                <div class="card card-custom p-4 shadow-sm">
+                    <h6 class="fw-bold text-dark border-bottom pb-2 mb-3">
+                        <i class="fa-solid fa-star text-warning me-2"></i> Alunos Indicados pelo Docente
+                    </h6>
+                    {% if req.recommendations %}
+                        <div class="list-group list-group-flush">
+                            {% for rec in req.recommendations %}
+                                <div class="list-group-item px-0 py-2 d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <div class="fw-semibold small text-dark">{{ rec.student.nompes }}</div>
+                                        <div class="text-muted smaller">NUSP: {{ rec.student.codpes }}</div>
+                                    </div>
+                                    <span class="badge bg-success-subtle text-success rounded-pill small">
+                                        <i class="fa-solid fa-check me-1"></i> Indicado
+                                    </span>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <p class="text-muted small mb-0 fst-italic">
+                            Nenhum aluno específico foi indicado para esta solicitação.
+                        </p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Seção de Candidatos Inscritos na Turma -->
+        <div class="card card-custom p-4 shadow-sm mb-5">
+            <div class="d-flex justify-content-between align-items-center border-bottom pb-3 mb-3">
+                <h5 class="fw-bold text-dark mb-0">
+                    <i class="fa-solid fa-users-rectangle text-info me-2"></i> Candidatos Inscritos nesta Turma ({{ enrollments|length }})
+                </h5>
+                <a href="/enrollments" class="btn btn-outline-info btn-sm">
+                    Ver Todas as Inscrições &rarr;
+                </a>
+            </div>
+
+            {% if enrollments %}
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Candidato (Nome / NUSP)</th>
+                                <th>Modalidade</th>
+                                <th>Disponibilidade</th>
+                                <th>Preferência / Observações</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for e in enrollments %}
+                            <tr>
+                                <td>
+                                    <div class="fw-semibold text-dark">{{ e.student.nompes }}</div>
+                                    <div class="small text-muted">NUSP: {{ e.student.codpes }}</div>
+                                </td>
+                                <td>
+                                    {% if e.voluntario %}
+                                        <span class="badge bg-secondary-subtle text-secondary">Voluntário</span>
+                                    {% else %}
+                                        <span class="badge bg-primary-subtle text-primary">Bolsista</span>
+                                    {% endif %}
+                                </td>
+                                <td class="small">
+                                    {% if e.disponibilidade_diurno %}
+                                        <span class="badge bg-light text-dark border">Diurno</span>
+                                    {% endif %}
+                                    {% if e.disponibilidade_noturno %}
+                                        <span class="badge bg-light text-dark border">Noturno</span>
+                                    {% endif %}
+                                </td>
+                                <td class="small text-muted">
+                                    {{ e.observacoes or e.preferencia_horario or '-' }}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="text-center py-4 text-muted">
+                    <i class="fa-regular fa-folder-open fa-2x mb-2 d-block opacity-50"></i>
+                    Ainda não há alunos inscritos para esta turma. As inscrições estarão abertas de acordo com o cronograma do edital.
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Confirmação de Exclusão -->
+<div class="modal fade" id="deleteModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header border-0 pb-0">
+                <h5 class="modal-title fw-bold text-danger">
+                    <i class="fa-solid fa-triangle-exclamation me-2"></i> Confirmar Exclusão
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+            </div>
+            <div class="modal-body py-3">
+                Deseja realmente excluir a solicitação de monitoria da turma 
+                <strong>{{ req.school_class.coddis }} (Turma {{ req.school_class.codtur }})</strong>?
+            </div>
+            <div class="modal-footer border-0 pt-0">
+                <button type="button" class="btn btn-light btn-sm" data-bs-dismiss="modal">Cancelar</button>
+                <form action="/requisitions/{{ req.id }}/delete" method="POST" class="d-inline">
+                    <button type="submit" class="btn btn-danger btn-sm fw-semibold">
+                        Sim, Excluir Pedido
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

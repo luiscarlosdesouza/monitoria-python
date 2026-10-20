@@ -142,6 +142,19 @@
 
     <!-- Main Content -->
     <main class="container my-4 flex-grow-1">
+        {% if request.query_params.get("msg") %}
+            <div class="alert alert-{{ 'danger' if request.query_params.get('type') in ['danger', 'error'] else request.query_params.get('type', 'success') }} alert-dismissible fade show shadow-sm" role="alert">
+                {% if request.query_params.get('type') in ['danger', 'error'] %}
+                    <i class="fa-solid fa-circle-exclamation me-2"></i>
+                {% elif request.query_params.get('type') == 'warning' %}
+                    <i class="fa-solid fa-triangle-exclamation me-2"></i>
+                {% else %}
+                    <i class="fa-solid fa-circle-check me-2"></i>
+                {% endif %}
+                <strong>{{ request.query_params.get("msg") }}</strong>
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Fechar"></button>
+            </div>
+        {% endif %}
         {% block content %}{% endblock %}
     </main>
 
