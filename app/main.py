@@ -38,13 +38,14 @@ if not os.path.exists(static_dir):
 app.mount("/static", StaticFiles(directory=static_dir), name="static")
 templates = Jinja2Templates(directory=templates_dir)
 
-from app.routers import auth, school_terms, school_classes, requisitions, enrollments
+from app.routers import auth, school_terms, school_classes, requisitions, enrollments, admin
 
 app.include_router(auth.router)
 app.include_router(school_terms.router)
 app.include_router(school_classes.router)
 app.include_router(requisitions.router)
 app.include_router(enrollments.router)
+app.include_router(admin.router)
 
 @app.get("/health")
 def health():

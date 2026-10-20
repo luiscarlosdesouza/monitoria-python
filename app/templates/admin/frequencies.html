@@ -1,0 +1,166 @@
+{% extends "base.html" %}
+
+{% block title %}Controle de Frequência - Administração IME-USP{% endblock %}
+
+{% block content %}
+<!-- Cabeçalho Principal -->
+<div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-3">
+    <div>
+        <h2 class="fw-bold mb-1 text-dark">
+            <i class="fa-solid fa-clipboard-check text-warning me-2"></i> Atesto de Frequência Mensal
+        </h2>
+        <p class="text-secondary mb-0">
+            Validação da atuação dos monitores bolsistas para liberação do pagamento mensal.
+        </p>
+    </div>
+    <div class="d-flex gap-2">
+        <a href="/admin" class="btn btn-outline-secondary btn-sm">
+            <i class="fa-solid fa-arrow-left me-1"></i> Painel Geral
+        </a>
+    </div>
+</div>
+
+<!-- Filtros de Consulta -->
+<div class="card card-custom p-3 mb-4 bg-white">
+    <form method="GET" action="/admin/frequencies" class="row g-2 align-items-end">
+        <div class="col-md-4">
+            <label class="form-label small fw-semibold text-secondary mb-1">Período Letivo</label>
+            <select name="term_id" class="form-select form-select-sm">
+                {% for t in terms %}
+                    <option value="{{ t.id }}" {% if selected_term_id == t.id %}selected{% endif %}>
+                        {{ t.year }}/{{ t.period }} ({{ t.status }})
+                    </option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-3">
+            <label class="form-label small fw-semibold text-secondary mb-1">Mês de Referência</label>
+            <select name="month" class="form-select form-select-sm">
+                {% for m_num, m_name in months_list %}
+                    <option value="{{ m_num }}" {% if selected_month == m_num %}selected{% endif %}>
+                        Mês {{ "%02d"|format(m_num) }} - {{ m_name }}
+                    </option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-3">
+            <label class="form-label small fw-semibold text-secondary mb-1">Departamento</label>
+            <select name="department_id" class="form-select form-select-sm">
+                <option value="">Todos</option>
+                {% for d in departments %}
+                    <option value="{{ d.id }}" {% if selected_dept_id == d.id %}selected{% endif %}>
+                        {{ d.nomabvset }} - {{ d.nomset }}
+                    </option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-2 d-flex gap-2">
+            <button type="submit" class="btn btn-primary btn-sm w-100 fw-semibold">
+                <i class="fa-solid fa-filter me-1"></i> Filtrar
+            </button>
+            <a href="/admin/frequencies" class="btn btn-outline-secondary btn-sm" title="Limpar Filtros">
+                <i class="fa-solid fa-rotate-left"></i>
+            </a>
+        </div>
+    </form>
+</div>
+
+<!-- Tabela de Monitores e Frequência do Mês -->
+<div class="card card-custom p-0 overflow-hidden shadow-sm mb-5">
+    <div class="p-3 bg-light border-bottom d-flex justify-content-between align-items-center">
+        <div>
+            <h6 class="fw-bold text-dark mb-0">
+                Frequência referente ao mês: 
+                <span class="badge bg-primary fs-6">
+                    {% for m_num, m_name in months_list if m_num == selected_month %}{{ m_name }}{% endfor %}
+                </span>
+            </h6>
+        </div>
+        <div>
+            <span class="small text-muted">
+                {{ active_monitors|length }} monitor(es) ativo(s)
+            </span>
+        </div>
+    </div>
+
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th class="ps-4">Monitor(a)</th>
+                    <th>Nº USP</th>
+                    <th>Disciplina & Turma</th>
+                    <th>Docente(s) da Turma</th>
+                    <th class="text-center">Status da Frequência</th>
+                    <th class="text-end pe-4">Ação</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% if active_monitors %}
+                    {% for m in active_monitors %}
+                    {% set is_registered = frequencies_map.get((m.student_id, m.school_class_id), False) %}
+                    <tr>
+                        <td class="ps-4 fw-bold text-dark">{{ m.student.nompes }}</td>
+                        <td><code>{{ m.student.codpes }}</code></td>
+                        <td>
+                            <div class="fw-semibold text-primary">
+                                {{ m.school_class.coddis }} - Turma {{ m.school_class.codtur }}
+                            </div>
+                            <span class="badge bg-light text-dark border smaller">
+                                {{ m.school_class.department.nomabvset }}
+                            </span>
+                        </td>
+                        <td class="small">
+                            {% if m.school_class.instructors %}
+                                {% for inst in m.school_class.instructors %}
+                                    <span class="d-block">{{ inst.nompes }}</span>
+                                {% endfor %}
+                            {% else %}
+                                <span class="text-muted fst-italic">Não atribuído</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-center">
+                            {% if is_registered %}
+                                <span class="badge bg-success-subtle text-success px-3 py-2 rounded-pill fw-semibold fs-6">
+                                    <i class="fa-solid fa-circle-check me-1"></i> Atestada
+                                </span>
+                            {% else %}
+                                <span class="badge bg-warning-subtle text-warning-emphasis px-3 py-2 rounded-pill fw-semibold fs-6">
+                                    <i class="fa-solid fa-clock me-1"></i> Pendente
+                                </span>
+                            {% endif %}
+                        </td>
+                        <td class="text-end pe-4">
+                            <form action="/admin/frequencies/toggle" method="POST" class="d-inline">
+                                <input type="hidden" name="student_id" value="{{ m.student_id }}">
+                                <input type="hidden" name="school_class_id" value="{{ m.school_class_id }}">
+                                <input type="hidden" name="month" value="{{ selected_month }}">
+                                <input type="hidden" name="term_id" value="{{ selected_term_id }}">
+
+                                {% if is_registered %}
+                                    <button type="submit" class="btn btn-outline-secondary btn-sm" title="Reverter atesto">
+                                        <i class="fa-solid fa-rotate-left me-1"></i> Desfazer Atesto
+                                    </button>
+                                {% else %}
+                                    <button type="submit" class="btn btn-success btn-sm fw-semibold shadow-sm" title="Confirmar atesto do mês">
+                                        <i class="fa-solid fa-check me-1"></i> Atestar Frequência
+                                    </button>
+                                {% endif %}
+                            </form>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                {% else %}
+                    <tr>
+                        <td colspan="6" class="text-center py-5 text-muted">
+                            <i class="fa-solid fa-clipboard-question fa-3x mb-3 text-secondary opacity-50"></i>
+                            <h5 class="fw-semibold text-secondary">Nenhum monitor ativo encontrado</h5>
+                            <p class="text-muted small mb-0">Não há monitores selecionados ativos para o período e filtros escolhidos.</p>
+                        </td>
+                    </tr>
+                {% endif %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

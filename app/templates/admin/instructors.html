@@ -1,0 +1,219 @@
+{% extends "base.html" %}
+
+{% block title %}Docentes - Administração IME-USP{% endblock %}
+
+{% block content %}
+<!-- Cabeçalho Principal -->
+<div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-3">
+    <div>
+        <h2 class="fw-bold mb-1 text-dark">
+            <i class="fa-solid fa-user-tie text-info me-2"></i> Gestão de Docentes
+        </h2>
+        <p class="text-secondary mb-0">
+            Cadastro e gerenciamento dos professores responsáveis pelas turmas e solicitações de monitoria.
+        </p>
+    </div>
+    <div class="d-flex gap-2">
+        <button type="button" class="btn btn-usp fw-semibold px-3 py-2 shadow-sm" data-bs-toggle="modal" data-bs-target="#newInstructorModal">
+            <i class="fa-solid fa-plus me-1"></i> Cadastrar Docente
+        </button>
+    </div>
+</div>
+
+<!-- Filtros e Busca -->
+<div class="card card-custom p-3 mb-4 bg-white">
+    <form method="GET" action="/admin/instructors" class="row g-2 align-items-end">
+        <div class="col-md-6">
+            <label class="form-label small fw-semibold text-secondary mb-1">Buscar Docente</label>
+            <div class="input-group input-group-sm">
+                <span class="input-group-text"><i class="fa-solid fa-magnifying-glass"></i></span>
+                <input type="text" name="search" class="form-control" placeholder="Nome ou Nº USP..." value="{{ search }}">
+            </div>
+        </div>
+        <div class="col-md-4">
+            <label class="form-label small fw-semibold text-secondary mb-1">Departamento</label>
+            <select name="department_id" class="form-select form-select-sm">
+                <option value="">Todos os departamentos</option>
+                {% for d in departments %}
+                    <option value="{{ d.id }}" {% if selected_dept_id == d.id %}selected{% endif %}>
+                        {{ d.nomabvset }} - {{ d.nomset }}
+                    </option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-2 d-flex gap-2">
+            <button type="submit" class="btn btn-primary btn-sm w-100 fw-semibold">
+                <i class="fa-solid fa-filter me-1"></i> Filtrar
+            </button>
+            <a href="/admin/instructors" class="btn btn-outline-secondary btn-sm" title="Limpar Filtros">
+                <i class="fa-solid fa-rotate-left"></i>
+            </a>
+        </div>
+    </form>
+</div>
+
+<!-- Tabela de Docentes -->
+<div class="card card-custom p-0 overflow-hidden shadow-sm mb-5">
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th class="ps-4">Nome do(a) Docente</th>
+                    <th>Nº USP</th>
+                    <th>E-mail</th>
+                    <th>Departamento</th>
+                    <th>Turmas Vinculadas</th>
+                    <th class="text-end pe-4">Ações</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% if instructors %}
+                    {% for inst in instructors %}
+                    <tr>
+                        <td class="ps-4 fw-bold text-dark">{{ inst.nompes }}</td>
+                        <td><code>{{ inst.codpes }}</code></td>
+                        <td>{{ inst.codema or '-' }}</td>
+                        <td>
+                            <span class="badge bg-primary text-white">
+                                {{ inst.department.nomabvset if inst.department else 'IME' }}
+                            </span>
+                        </td>
+                        <td>
+                            <span class="badge bg-light text-dark border">
+                                {{ inst.school_classes|length }} turma(s)
+                            </span>
+                        </td>
+                        <td class="text-end pe-4 text-nowrap">
+                            <!-- Botão Editar -->
+                            <button type="button" class="btn btn-outline-secondary btn-sm me-1" title="Editar"
+                                    data-bs-toggle="modal" data-bs-target="#editModal{{ inst.id }}">
+                                <i class="fa-solid fa-pen-to-square"></i>
+                            </button>
+                            <!-- Botão Excluir -->
+                            <button type="button" class="btn btn-outline-danger btn-sm" title="Excluir"
+                                    data-bs-toggle="modal" data-bs-target="#deleteModal{{ inst.id }}">
+                                <i class="fa-solid fa-trash"></i>
+                            </button>
+
+                            <!-- Modal Editar Docente -->
+                            <div class="modal fade text-start" id="editModal{{ inst.id }}" tabindex="-1" aria-hidden="true">
+                                <div class="modal-dialog modal-dialog-centered">
+                                    <div class="modal-content">
+                                        <div class="modal-header border-0 pb-0">
+                                            <h5 class="modal-title fw-bold text-primary">Editar Docente</h5>
+                                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+                                        </div>
+                                        <form action="/admin/instructors/{{ inst.id }}/edit" method="POST">
+                                            <div class="modal-body py-3">
+                                                <div class="mb-3">
+                                                    <label class="form-label small fw-semibold text-secondary mb-1">Número USP</label>
+                                                    <input type="text" class="form-control" value="{{ inst.codpes }}" disabled>
+                                                </div>
+                                                <div class="mb-3">
+                                                    <label class="form-label small fw-semibold text-secondary mb-1">Nome Completo</label>
+                                                    <input type="text" name="nompes" class="form-control" value="{{ inst.nompes }}" required>
+                                                </div>
+                                                <div class="mb-3">
+                                                    <label class="form-label small fw-semibold text-secondary mb-1">E-mail</label>
+                                                    <input type="email" name="codema" class="form-control" value="{{ inst.codema or '' }}">
+                                                </div>
+                                                <div class="mb-3">
+                                                    <label class="form-label small fw-semibold text-secondary mb-1">Departamento</label>
+                                                    <select name="department_id" class="form-select" required>
+                                                        {% for d in departments %}
+                                                            <option value="{{ d.id }}" {% if inst.department_id == d.id %}selected{% endif %}>
+                                                                {{ d.nomabvset }} - {{ d.nomset }}
+                                                            </option>
+                                                        {% endfor %}
+                                                    </select>
+                                                </div>
+                                            </div>
+                                            <div class="modal-footer border-0 pt-0">
+                                                <button type="button" class="btn btn-light btn-sm" data-bs-dismiss="modal">Cancelar</button>
+                                                <button type="submit" class="btn btn-primary btn-sm fw-bold">Salvar Alterações</button>
+                                            </div>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Modal Excluir Docente -->
+                            <div class="modal fade text-start" id="deleteModal{{ inst.id }}" tabindex="-1" aria-hidden="true">
+                                <div class="modal-dialog modal-dialog-centered">
+                                    <div class="modal-content">
+                                        <div class="modal-header border-0 pb-0">
+                                            <h5 class="modal-title fw-bold text-danger">Confirmar Exclusão</h5>
+                                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+                                        </div>
+                                        <div class="modal-body py-3">
+                                            Deseja realmente remover o docente <strong>{{ inst.nompes }} (NUSP: {{ inst.codpes }})</strong>?
+                                        </div>
+                                        <div class="modal-footer border-0 pt-0">
+                                            <button type="button" class="btn btn-light btn-sm" data-bs-dismiss="modal">Cancelar</button>
+                                            <form action="/admin/instructors/{{ inst.id }}/delete" method="POST" class="d-inline">
+                                                <button type="submit" class="btn btn-danger btn-sm fw-semibold">Sim, Remover</button>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                {% else %}
+                    <tr>
+                        <td colspan="6" class="text-center py-5 text-muted">
+                            <i class="fa-solid fa-user-xmark fa-3x mb-3 text-secondary opacity-50"></i>
+                            <h5 class="fw-semibold text-secondary">Nenhum docente encontrado</h5>
+                            <p class="text-muted small mb-0">Cadastre novos docentes para vinculá-los às turmas.</p>
+                        </td>
+                    </tr>
+                {% endif %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Modal Novo Docente -->
+<div class="modal fade" id="newInstructorModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header border-0 pb-0">
+                <h5 class="modal-title fw-bold text-primary">
+                    <i class="fa-solid fa-user-plus me-2"></i> Cadastrar Docente
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+            </div>
+            <form action="/admin/instructors/create" method="POST">
+                <div class="modal-body py-3">
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold text-secondary mb-1">Número USP <span class="text-danger">*</span></label>
+                        <input type="text" name="codpes" class="form-control" placeholder="Ex: 1234567" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold text-secondary mb-1">Nome Completo <span class="text-danger">*</span></label>
+                        <input type="text" name="nompes" class="form-control" placeholder="Ex: Prof. Dr. Fulano de Tal" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold text-secondary mb-1">E-mail Institucional</label>
+                        <input type="email" name="codema" class="form-control" placeholder="fulano@ime.usp.br">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold text-secondary mb-1">Departamento <span class="text-danger">*</span></label>
+                        <select name="department_id" class="form-select" required>
+                            <option value="">Selecione o departamento...</option>
+                            {% for d in departments %}
+                                <option value="{{ d.id }}">{{ d.nomabvset }} - {{ d.nomset }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer border-0 pt-0">
+                    <button type="button" class="btn btn-light btn-sm" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-usp btn-sm fw-bold">Cadastrar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

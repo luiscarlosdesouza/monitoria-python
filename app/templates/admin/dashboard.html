@@ -1,0 +1,183 @@
+{% extends "base.html" %}
+
+{% block title %}Painel Administrativo - IME-USP{% endblock %}
+
+{% block content %}
+<!-- Cabeçalho Principal -->
+<div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-3">
+    <div>
+        <h2 class="fw-bold mb-1 text-dark">
+            <i class="fa-solid fa-chart-pie text-warning me-2"></i> Painel Administrativo
+        </h2>
+        <p class="text-secondary mb-0">
+            Visão consolidada da gestão de monitorias, distribuição de bolsas e atestos do IME-USP.
+        </p>
+    </div>
+    {% if active_term %}
+        <div>
+            <span class="badge bg-primary px-3 py-2 fs-6 rounded-pill">
+                <i class="fa-solid fa-calendar-check me-1"></i> Período Ativo: {{ active_term.year }}/{{ active_term.period }}
+            </span>
+        </div>
+    {% endif %}
+</div>
+
+<!-- Cards de Métricas Principais -->
+<div class="row g-3 mb-4">
+    <div class="col-md-3 col-sm-6">
+        <div class="card card-custom p-3 border-start border-4 border-primary">
+            <div class="d-flex align-items-center">
+                <div class="p-3 bg-primary bg-opacity-10 text-primary rounded-3 me-3">
+                    <i class="fa-solid fa-chalkboard-user fa-2x"></i>
+                </div>
+                <div>
+                    <h6 class="text-muted text-uppercase mb-1 small fw-bold">Turmas</h6>
+                    <h3 class="fw-bold mb-0 text-dark">{{ stats.total_classes }}</h3>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 col-sm-6">
+        <div class="card card-custom p-3 border-start border-4 border-warning">
+            <div class="d-flex align-items-center">
+                <div class="p-3 bg-warning bg-opacity-10 text-warning rounded-3 me-3">
+                    <i class="fa-solid fa-clipboard-question fa-2x"></i>
+                </div>
+                <div>
+                    <h6 class="text-muted text-uppercase mb-1 small fw-bold">Vagas Pedidas</h6>
+                    <h3 class="fw-bold mb-0 text-dark">{{ stats.total_requested_monitors }}</h3>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 col-sm-6">
+        <div class="card card-custom p-3 border-start border-4 border-info">
+            <div class="d-flex align-items-center">
+                <div class="p-3 bg-info bg-opacity-10 text-info rounded-3 me-3">
+                    <i class="fa-solid fa-file-signature fa-2x"></i>
+                </div>
+                <div>
+                    <h6 class="text-muted text-uppercase mb-1 small fw-bold">Candidatos</h6>
+                    <h3 class="fw-bold mb-0 text-dark">{{ stats.total_enrollments }}</h3>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 col-sm-6">
+        <div class="card card-custom p-3 border-start border-4 border-success">
+            <div class="d-flex align-items-center">
+                <div class="p-3 bg-success bg-opacity-10 text-success rounded-3 me-3">
+                    <i class="fa-solid fa-user-check fa-2x"></i>
+                </div>
+                <div>
+                    <h6 class="text-muted text-uppercase mb-1 small fw-bold">Monitores Ativos</h6>
+                    <h3 class="fw-bold mb-0 text-dark">{{ stats.active_selections }}</h3>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Atalhos Rápidos da Administração -->
+<div class="row g-3 mb-4">
+    <div class="col-md-3 col-sm-6">
+        <a href="/admin/selections" class="card card-custom p-3 text-decoration-none h-100 hover-card">
+            <div class="d-flex align-items-center">
+                <div class="p-3 bg-success bg-opacity-10 text-success rounded-3 me-3">
+                    <i class="fa-solid fa-user-check fa-xl"></i>
+                </div>
+                <div>
+                    <h6 class="fw-bold text-dark mb-1">Seleção & Bolsas</h6>
+                    <span class="small text-muted">Aprovar monitores e cotas &rarr;</span>
+                </div>
+            </div>
+        </a>
+    </div>
+    <div class="col-md-3 col-sm-6">
+        <a href="/admin/frequencies" class="card card-custom p-3 text-decoration-none h-100 hover-card">
+            <div class="d-flex align-items-center">
+                <div class="p-3 bg-warning bg-opacity-10 text-warning rounded-3 me-3">
+                    <i class="fa-solid fa-clipboard-check fa-xl"></i>
+                </div>
+                <div>
+                    <h6 class="fw-bold text-dark mb-1">Atesto Mensal</h6>
+                    <span class="small text-muted">Controle de frequência &rarr;</span>
+                </div>
+            </div>
+        </a>
+    </div>
+    <div class="col-md-3 col-sm-6">
+        <a href="/admin/instructors" class="card card-custom p-3 text-decoration-none h-100 hover-card">
+            <div class="d-flex align-items-center">
+                <div class="p-3 bg-info bg-opacity-10 text-info rounded-3 me-3">
+                    <i class="fa-solid fa-user-tie fa-xl"></i>
+                </div>
+                <div>
+                    <h6 class="fw-bold text-dark mb-1">Docentes</h6>
+                    <span class="small text-muted">{{ stats.total_instructors }} professores cadastrados &rarr;</span>
+                </div>
+            </div>
+        </a>
+    </div>
+    <div class="col-md-3 col-sm-6">
+        <a href="/admin/mailtemplates" class="card card-custom p-3 text-decoration-none h-100 hover-card">
+            <div class="d-flex align-items-center">
+                <div class="p-3 bg-danger bg-opacity-10 text-danger rounded-3 me-3">
+                    <i class="fa-solid fa-envelope-open-text fa-xl"></i>
+                </div>
+                <div>
+                    <h6 class="fw-bold text-dark mb-1">Modelos de E-mail</h6>
+                    <span class="small text-muted">Comunicados e avisos &rarr;</span>
+                </div>
+            </div>
+        </a>
+    </div>
+</div>
+
+<!-- Painel Consolidado por Departamento do IME -->
+<div class="card card-custom p-4 shadow-sm mb-5">
+    <div class="d-flex justify-content-between align-items-center border-bottom pb-3 mb-3">
+        <h5 class="fw-bold text-dark mb-0">
+            <i class="fa-solid fa-building-columns text-primary me-2"></i> Panorama por Departamento
+        </h5>
+        <a href="/admin/departments" class="btn btn-outline-primary btn-sm">
+            Ver Departamentos &rarr;
+        </a>
+    </div>
+
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th class="ps-4">Departamento</th>
+                    <th>Sigla</th>
+                    <th class="text-center">Turmas Ofertadas</th>
+                    <th class="text-center">Docentes Vinculados</th>
+                    <th class="text-center">Pedidos de Monitoria</th>
+                    <th class="text-end pe-4">Ações</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in dept_stats %}
+                <tr>
+                    <td class="ps-4 fw-bold text-dark">{{ item.dept.nomset }}</td>
+                    <td><span class="badge bg-primary text-white">{{ item.dept.nomabvset }}</span></td>
+                    <td class="text-center fw-semibold">{{ item.classes }}</td>
+                    <td class="text-center">{{ item.instructors }}</td>
+                    <td class="text-center">
+                        <span class="badge bg-warning-subtle text-warning-emphasis px-2.5 py-1 rounded-pill">
+                            {{ item.requisitions }} pedido(s)
+                        </span>
+                    </td>
+                    <td class="text-end pe-4">
+                        <a href="/schoolclasses?department_id={{ item.dept.id }}" class="btn btn-outline-secondary btn-sm py-0 px-2" title="Filtrar Turmas">
+                            <i class="fa-solid fa-chalkboard-user me-1"></i> Turmas
+                        </a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

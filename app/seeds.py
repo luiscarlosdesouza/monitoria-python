@@ -3,7 +3,8 @@ from sqlalchemy.orm import Session
 from app.database import SessionLocal
 from app.models import (
     Department, Activity, Scholarship, SchoolTerm, SchoolClass, 
-    Instructor, Student, Requisition, ClassSchedule, Enrollment
+    Instructor, Student, Requisition, ClassSchedule, Enrollment,
+    MailTemplate
 )
 
 def run_seeds():
@@ -151,6 +152,31 @@ def run_seeds():
                 class_mac121.instructors.append(inst_cris)
             if class_mat111 and inst_toscano:
                 class_mat111.instructors.append(inst_toscano)
+
+        # 7. Modelos de E-mail Padrão (se não existirem)
+        if db.query(MailTemplate).count() == 0:
+            templates_data = [
+                {
+                    "name": "Resultado da Seleção",
+                    "mail_class": "SelectionResultMail",
+                    "description": "Notificação enviada ao candidato informando o resultado da seleção e atribuição de bolsa.",
+                    "sending_frequency": "Manual",
+                    "active": True,
+                    "subject": "[Monitoria IME-USP] Resultado do Processo Seletivo de Monitoria",
+                    "body": "Prezado(a) {nome},\n\nParabéns! Você foi selecionado(a) como monitor(a) para a turma {disciplina} ({turma}) no período letivo {periodo}.\n\nModalidade: {modalidade}\n\nFavor comparecer ao departamento para orientações iniciais.\n\nAtenciosamente,\nComissão de Graduação - IME-USP"
+                },
+                {
+                    "name": "Lembrete de Frequência Mensal",
+                    "mail_class": "MonthlyFrequencyMail",
+                    "description": "Lembrete mensal enviado aos docentes para atestar a frequência dos monitores bolsistas.",
+                    "sending_frequency": "Mensal",
+                    "active": True,
+                    "subject": "[Monitoria IME-USP] Lembrete de Atesto de Frequência de Monitores",
+                    "body": "Prezado(a) Professor(a),\n\nInformamos que o período para atesto da frequência mensal dos monitores da sua turma {disciplina} está aberto no sistema.\n\nAcesse o sistema em https://monitoria.ime.usp.br para validar a frequência.\n\nAtenciosamente,\nSecretaria de Graduação - IME-USP"
+                }
+            ]
+            for tmpl in templates_data:
+                db.add(MailTemplate(**tmpl))
 
         db.commit()
     except Exception as e:
