@@ -12,8 +12,10 @@ from app.models.school_term import SchoolTerm
 from app.models.school_class import SchoolClass
 from app.models.requisition import Requisition
 from app.models.enrollment import Enrollment
+from app.services.permissions import can_manage_terms
 
 router = APIRouter(prefix="/schoolterms", tags=["Períodos Letivos"])
+
 templates = Jinja2Templates(directory=os.path.join(os.path.dirname(__file__), "..", "templates"))
 
 # Diretório para editais oficiais
@@ -70,6 +72,11 @@ def list_terms(
 @router.get("/create", response_class=HTMLResponse)
 def create_term_form(request: Request):
     user = request.session.get("user")
+    if not can_manage_terms(user):
+        return RedirectResponse(
+            url="/schoolterms?msg=Acesso restrito: apenas Administrador e Secretaria podem gerenciar períodos letivos.&type=danger",
+            status_code=303
+        )
     current_year = datetime.now().year
 
     return templates.TemplateResponse(
@@ -86,7 +93,15 @@ async def create_term(
     request: Request,
     db: Session = Depends(get_db)
 ):
+    user = request.session.get("user")
+    if not can_manage_terms(user):
+        return RedirectResponse(
+            url="/schoolterms?msg=Acesso restrito: apenas Administrador e Secretaria podem cadastrar períodos.&type=danger",
+            status_code=303
+        )
+
     form = await request.form()
+
     year = int(form.get("year", datetime.now().year))
     period = str(form.get("period", "1º Semestre")).strip()
     status = str(form.get("status", "Aberto")).strip()
@@ -196,11 +211,17 @@ def term_details(term_id: int, request: Request, db: Session = Depends(get_db)):
 
 @router.get("/{term_id}/edit", response_class=HTMLResponse)
 def edit_term_form(term_id: int, request: Request, db: Session = Depends(get_db)):
+    user = request.session.get("user")
+    if not can_manage_terms(user):
+        return RedirectResponse(
+            url=f"/schoolterms/{term_id}?msg=Acesso restrito: apenas Administrador e Secretaria podem editar períodos letivos.&type=danger",
+            status_code=303
+        )
+
     term = db.query(SchoolTerm).filter(SchoolTerm.id == term_id).first()
     if not term:
         raise HTTPException(status_code=404, detail="Período letivo não encontrado.")
 
-    user = request.session.get("user")
     return templates.TemplateResponse(
         request=request,
         name="school_terms/edit.html",
@@ -212,6 +233,13 @@ def edit_term_form(term_id: int, request: Request, db: Session = Depends(get_db)
 
 @router.post("/{term_id}/edit")
 async def edit_term(term_id: int, request: Request, db: Session = Depends(get_db)):
+    user = request.session.get("user")
+    if not can_manage_terms(user):
+        return RedirectResponse(
+            url=f"/schoolterms/{term_id}?msg=Acesso restrito.&type=danger",
+            status_code=303
+        )
+
     term = db.query(SchoolTerm).filter(SchoolTerm.id == term_id).first()
     if not term:
         raise HTTPException(status_code=404, detail="Período letivo não encontrado.")
@@ -262,6 +290,13 @@ async def edit_term(term_id: int, request: Request, db: Session = Depends(get_db
 
 @router.post("/{term_id}/delete")
 def delete_term(term_id: int, request: Request, db: Session = Depends(get_db)):
+    user = request.session.get("user")
+    if not can_manage_terms(user):
+        return RedirectResponse(
+            url="/schoolterms?msg=Acesso restrito: apenas Administrador e Secretaria podem excluir períodos letivos.&type=danger",
+            status_code=303
+        )
+
     term = db.query(SchoolTerm).filter(SchoolTerm.id == term_id).first()
     if not term:
         raise HTTPException(status_code=404, detail="Período letivo não encontrado.")
@@ -274,3 +309,4 @@ def delete_term(term_id: int, request: Request, db: Session = Depends(get_db)):
         url=f"/schoolterms?msg=Período+letivo+{label}+excluído+com+sucesso.&type=info",
         status_code=303
     )
+

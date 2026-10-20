@@ -38,7 +38,11 @@ if not os.path.exists(static_dir):
 app.mount("/static", StaticFiles(directory=static_dir), name="static")
 templates = Jinja2Templates(directory=templates_dir)
 
-from app.routers import auth, school_terms, school_classes, requisitions, enrollments, admin
+from app.services.permissions import get_user_permissions, normalize_role
+templates.env.globals["get_user_permissions"] = get_user_permissions
+templates.env.globals["normalize_role"] = normalize_role
+
+from app.routers import auth, school_terms, school_classes, requisitions, enrollments, admin, users
 
 app.include_router(auth.router)
 app.include_router(school_terms.router)
@@ -46,6 +50,7 @@ app.include_router(school_classes.router)
 app.include_router(requisitions.router)
 app.include_router(enrollments.router)
 app.include_router(admin.router)
+app.include_router(users.router)
 
 @app.get("/health")
 def health():
@@ -54,11 +59,14 @@ def health():
 @app.get("/")
 def home(request: Request):
     user = request.session.get("user")
+    perms = get_user_permissions(user)
     return templates.TemplateResponse(
         request=request, 
         name="index.html", 
         context={
             "user": user,
+            "perms": perms,
             "app_name": settings.APP_NAME
         }
     )
+

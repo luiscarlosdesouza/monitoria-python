@@ -14,8 +14,10 @@ from app.models.instructor import Instructor
 from app.models.class_schedule import ClassSchedule
 from app.models.requisition import Requisition
 from app.models.enrollment import Enrollment
+from app.services.permissions import can_manage_classes
 
 router = APIRouter(prefix="/schoolclasses", tags=["Turmas e Disciplinas"])
+
 templates = Jinja2Templates(directory=os.path.join(os.path.dirname(__file__), "..", "templates"))
 
 @router.get("", response_class=HTMLResponse)
@@ -87,10 +89,16 @@ def list_classes(
 
 @router.get("/create", response_class=HTMLResponse)
 def create_class_form(request: Request, db: Session = Depends(get_db)):
+    user = request.session.get("user")
+    if not can_manage_classes(user):
+        return RedirectResponse(
+            url="/schoolclasses?msg=Acesso restrito: apenas Administrador e Secretaria podem cadastrar turmas.&type=danger",
+            status_code=303
+        )
+
     terms = db.query(SchoolTerm).order_by(SchoolTerm.year.desc()).all()
     departments = db.query(Department).order_by(Department.nomabvset).all()
     instructors = db.query(Instructor).order_by(Instructor.nompes).all()
-    user = request.session.get("user")
 
     return templates.TemplateResponse(
         request=request,
@@ -105,7 +113,15 @@ def create_class_form(request: Request, db: Session = Depends(get_db)):
 
 @router.post("/create")
 async def create_class(request: Request, db: Session = Depends(get_db)):
+    user = request.session.get("user")
+    if not can_manage_classes(user):
+        return RedirectResponse(
+            url="/schoolclasses?msg=Acesso restrito: apenas Administrador e Secretaria podem cadastrar turmas.&type=danger",
+            status_code=303
+        )
+
     form = await request.form()
+
     school_term_id = int(form.get("school_term_id", 0))
     department_id = int(form.get("department_id", 0))
     coddis = str(form.get("coddis", "")).strip().upper()
@@ -208,6 +224,13 @@ def class_details(class_id: int, request: Request, db: Session = Depends(get_db)
 
 @router.get("/{class_id}/edit", response_class=HTMLResponse)
 def edit_class_form(class_id: int, request: Request, db: Session = Depends(get_db)):
+    user = request.session.get("user")
+    if not can_manage_classes(user):
+        return RedirectResponse(
+            url=f"/schoolclasses/{class_id}?msg=Acesso restrito: apenas Administrador e Secretaria podem editar turmas.&type=danger",
+            status_code=303
+        )
+
     school_class = db.query(SchoolClass).options(
         joinedload(SchoolClass.instructors),
         joinedload(SchoolClass.class_schedules)
@@ -219,7 +242,6 @@ def edit_class_form(class_id: int, request: Request, db: Session = Depends(get_d
     terms = db.query(SchoolTerm).order_by(SchoolTerm.year.desc()).all()
     departments = db.query(Department).order_by(Department.nomabvset).all()
     instructors = db.query(Instructor).order_by(Instructor.nompes).all()
-    user = request.session.get("user")
 
     selected_instructor_ids = [inst.id for inst in school_class.instructors]
 
@@ -238,6 +260,13 @@ def edit_class_form(class_id: int, request: Request, db: Session = Depends(get_d
 
 @router.post("/{class_id}/edit")
 async def edit_class(class_id: int, request: Request, db: Session = Depends(get_db)):
+    user = request.session.get("user")
+    if not can_manage_classes(user):
+        return RedirectResponse(
+            url=f"/schoolclasses/{class_id}?msg=Acesso restrito.&type=danger",
+            status_code=303
+        )
+
     school_class = db.query(SchoolClass).filter(SchoolClass.id == class_id).first()
     if not school_class:
         raise HTTPException(status_code=404, detail="Turma não encontrada.")
@@ -286,6 +315,13 @@ async def edit_class(class_id: int, request: Request, db: Session = Depends(get_
 
 @router.post("/{class_id}/delete")
 def delete_class(class_id: int, request: Request, db: Session = Depends(get_db)):
+    user = request.session.get("user")
+    if not can_manage_classes(user):
+        return RedirectResponse(
+            url="/schoolclasses?msg=Acesso restrito: apenas Administrador e Secretaria podem excluir turmas.&type=danger",
+            status_code=303
+        )
+
     school_class = db.query(SchoolClass).filter(SchoolClass.id == class_id).first()
     if not school_class:
         raise HTTPException(status_code=404, detail="Turma não encontrada.")
@@ -298,3 +334,4 @@ def delete_class(class_id: int, request: Request, db: Session = Depends(get_db))
         url=f"/schoolclasses?msg=Turma+{cod}+excluída+com+sucesso.&type=info",
         status_code=303
     )
+

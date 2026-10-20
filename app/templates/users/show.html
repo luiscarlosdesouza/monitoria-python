@@ -1,0 +1,295 @@
+{% extends "base.html" %}
+
+{% block title %}{{ target_user.name }} - Detalhes do Usuário - Monitoria IME-USP{% endblock %}
+
+{% block content %}
+<!-- Botão Voltar e Cabeçalho -->
+<div class="mb-4">
+    <a href="/users" class="btn btn-outline-secondary btn-sm mb-3">
+        <i class="fa-solid fa-arrow-left me-1"></i> Voltar para Lista de Usuários
+    </a>
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-3">
+        <div class="d-flex align-items-center">
+            <div class="avatar-large me-3 bg-primary text-white fw-bold shadow-sm">
+                {{ target_user.name[:2].upper() }}
+            </div>
+            <div>
+                <h2 class="fw-bold mb-0 text-dark">{{ target_user.name }}</h2>
+                <div class="d-flex align-items-center gap-2 mt-1">
+                    <span class="badge bg-{{ badge.bg }}-subtle text-{{ badge.bg }} border border-{{ badge.bg }}-subtle px-2.5 py-1 rounded-pill fw-semibold">
+                        <i class="fa-solid {{ badge.icon }} me-1"></i> {{ target_user.role }}
+                    </span>
+                    {% if target_user.codpes %}
+                        <span class="text-muted small">
+                            <i class="fa-solid fa-id-card me-1"></i> Nº USP: <strong class="font-monospace text-dark">{{ target_user.codpes }}</strong>
+                        </span>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% if perms.can_manage_users %}
+        <div class="d-flex gap-2">
+            <button type="button" class="btn btn-outline-primary fw-semibold" data-bs-toggle="modal" data-bs-target="#editUserModal">
+                <i class="fa-solid fa-pen-to-square me-1"></i> Editar Perfil
+            </button>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<div class="row g-4">
+    <!-- Coluna de Informações do Usuário -->
+    <div class="col-lg-4">
+        <div class="card card-custom p-4 mb-4">
+            <h5 class="fw-bold text-dark border-bottom pb-2 mb-3">
+                <i class="fa-solid fa-circle-user text-primary me-2"></i> Dados Cadastrais
+            </h5>
+            <div class="mb-3">
+                <span class="text-muted smaller text-uppercase fw-bold d-block">E-mail</span>
+                <span class="fw-medium text-dark">
+                    <i class="fa-regular fa-envelope me-1 text-secondary"></i> {{ target_user.email }}
+                </span>
+            </div>
+            <div class="mb-3">
+                <span class="text-muted smaller text-uppercase fw-bold d-block">Número USP</span>
+                <span class="fw-medium text-dark font-monospace">
+                    {{ target_user.codpes or 'Não cadastrado' }}
+                </span>
+            </div>
+            <div class="mb-3">
+                <span class="text-muted smaller text-uppercase fw-bold d-block">Função Atual no Sistema</span>
+                <span class="badge bg-{{ badge.bg }} text-white px-2.5 py-1.5 rounded-pill">
+                    <i class="fa-solid {{ badge.icon }} me-1"></i> {{ target_user.role }}
+                </span>
+            </div>
+            <div class="mb-3">
+                <span class="text-muted smaller text-uppercase fw-bold d-block">Data de Registro</span>
+                <span class="text-secondary small">
+                    {{ target_user.created_at.strftime('%d/%m/%Y às %H:%M') if target_user.created_at else 'Não registrado' }}
+                </span>
+            </div>
+            <div class="mb-0">
+                <span class="text-muted smaller text-uppercase fw-bold d-block">Última Atualização</span>
+                <span class="text-secondary small">
+                    {{ target_user.updated_at.strftime('%d/%m/%Y às %H:%M') if target_user.updated_at else 'Nenhuma alteração recente' }}
+                </span>
+            </div>
+        </div>
+
+        <div class="card card-custom p-4 bg-light border-0">
+            <h6 class="fw-bold text-dark mb-2">
+                <i class="fa-solid fa-shield-halved text-info me-1"></i> Permissões da Função
+            </h6>
+            <p class="small text-muted mb-0">
+                O perfil <strong>{{ target_user.role }}</strong> define automaticamente quais telas, relatórios e ações este usuário pode acessar ao se autenticar com a Senha Única USP.
+            </p>
+        </div>
+    </div>
+
+    <!-- Coluna de Histórico e Atividades no Sistema -->
+    <div class="col-lg-8">
+        <!-- Turmas Ministradas se for Docente -->
+        {% if classes_taught %}
+        <div class="card card-custom p-4 mb-4">
+            <h5 class="fw-bold text-dark border-bottom pb-2 mb-3">
+                <i class="fa-solid fa-chalkboard-user text-secondary me-2"></i> Turmas Ministradas ({{ classes_taught|length }})
+            </h5>
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr class="small text-uppercase text-secondary">
+                            <th>Disciplina</th>
+                            <th>Turma</th>
+                            <th>Departamento</th>
+                            <th class="text-center">Pedidos de Monitor</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for c in classes_taught %}
+                        <tr>
+                            <td>
+                                <a href="/schoolclasses/{{ c.id }}" class="fw-bold text-primary text-decoration-none">
+                                    {{ c.coddis }} - {{ c.nomdis }}
+                                </a>
+                            </td>
+                            <td><span class="badge bg-light text-dark border">{{ c.codtur }}</span></td>
+                            <td>{{ c.department.code if c.department else '-' }}</td>
+                            <td class="text-center">
+                                {% if c.requisitions %}
+                                    <span class="badge bg-warning-subtle text-warning-emphasis">
+                                        {{ c.requisitions[0].requested_number }} vaga(s) solicitada(s)
+                                    </span>
+                                {% else %}
+                                    <span class="text-muted small">Sem pedido</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Inscrições e Monitorias se for Aluno / Monitor -->
+        {% if enrollments or selections %}
+        <div class="card card-custom p-4 mb-4">
+            <h5 class="fw-bold text-dark border-bottom pb-2 mb-3">
+                <i class="fa-solid fa-user-graduate text-success me-2"></i> Inscrições e Seleções de Monitoria
+            </h5>
+            {% if enrollments %}
+            <h6 class="fw-bold text-secondary mb-2 small text-uppercase">Inscrições Realizadas</h6>
+            <div class="table-responsive mb-4">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr class="small text-uppercase text-secondary">
+                            <th>Período</th>
+                            <th>Turma / Disciplina</th>
+                            <th>Tipo de Vaga</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for e in enrollments %}
+                        <tr>
+                            <td>{{ e.school_term.year }}/{{ e.school_term.period }}º Semestre</td>
+                            <td>
+                                {% if e.school_class %}
+                                    <strong>{{ e.school_class.coddis }}</strong> (Turma {{ e.school_class.codtur }})
+                                {% else %}
+                                    -
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if e.requires_scholarship %}
+                                    <span class="badge bg-success-subtle text-success">Bolsa</span>
+                                {% else %}
+                                    <span class="badge bg-secondary-subtle text-secondary">Voluntário</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <span class="badge bg-info-subtle text-info">{{ e.status or 'Inscrito' }}</span>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% endif %}
+
+            {% if selections %}
+            <h6 class="fw-bold text-secondary mb-2 small text-uppercase">Monitorias Aprovadas / Ativas</h6>
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr class="small text-uppercase text-secondary">
+                            <th>Turma</th>
+                            <th>Tipo de Bolsa</th>
+                            <th>Status da Monitoria</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for s in selections %}
+                        <tr>
+                            <td>
+                                {% if s.school_class %}
+                                    <strong>{{ s.school_class.coddis }}</strong> - Turma {{ s.school_class.codtur }}
+                                {% else %}
+                                    -
+                                {% endif %}
+                            </td>
+                            <td>{{ s.bolsa or 'Remunerada' }}</td>
+                            <td>
+                                <span class="badge bg-{{ 'success' if s.sitatl == 'Ativo' else 'secondary' }} rounded-pill">
+                                    {{ s.sitatl }}
+                                </span>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% endif %}
+        </div>
+        {% endif %}
+
+        {% if not classes_taught and not enrollments and not selections %}
+        <div class="card card-custom p-5 text-center text-muted">
+            <i class="fa-solid fa-folder-open fa-3x mb-3 text-secondary opacity-50"></i>
+            <h5>Nenhum vínculo operacional recente</h5>
+            <p class="small mb-0">
+                Este usuário não possui turmas alocadas como docente nem inscrições registradas como estudante neste momento.
+            </p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+{% if perms.can_manage_users %}
+<!-- Modal Edição do Usuário -->
+<div class="modal fade" id="editUserModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered text-start">
+        <div class="modal-content">
+            <form action="/users/{{ target_user.id }}/edit" method="POST">
+                <div class="modal-header">
+                    <h5 class="modal-title fw-bold">
+                        <i class="fa-solid fa-user-pen text-primary me-2"></i> Editar Usuário e Perfil
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Nome Completo</label>
+                        <input type="text" name="name" value="{{ target_user.name }}" class="form-control" required>
+                    </div>
+                    <div class="row g-2 mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Número USP</label>
+                            <input type="number" name="codpes" value="{{ target_user.codpes or '' }}" class="form-control font-monospace">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">E-mail</label>
+                            <input type="email" name="email" value="{{ target_user.email }}" class="form-control" required>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold text-primary">Perfil de Acesso (Função)</label>
+                        <select name="role" class="form-select form-select-lg border-primary" required>
+                            {% for r in roles %}
+                                <option value="{{ r }}" {% if target_user.role == r %}selected{% endif %}>
+                                    {{ r }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                        <div class="form-text mt-1">
+                            Selecione um dos 7 perfis oficiais para redefinir as permissões do usuário.
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary fw-semibold">
+                        <i class="fa-solid fa-floppy-disk me-1"></i> Salvar Alterações
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<style>
+.avatar-large {
+    width: 58px;
+    height: 58px;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.4rem;
+}
+.smaller {
+    font-size: 0.78rem;
+}
+</style>
+{% endblock %}

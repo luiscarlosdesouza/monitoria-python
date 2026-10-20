@@ -16,8 +16,10 @@ from app.models.activity import Activity
 from app.models.student import Student
 from app.models.recommendation import Recommendation
 from app.models.enrollment import Enrollment
+from app.services.permissions import can_manage_requisitions, is_admin, is_secretaria
 
 router = APIRouter(prefix="/requisitions", tags=["Pedidos de Monitoria"])
+
 templates = Jinja2Templates(directory=os.path.join(os.path.dirname(__file__), "..", "templates"))
 
 @router.get("", response_class=HTMLResponse)
@@ -84,6 +86,11 @@ def create_requisition_form(
     db: Session = Depends(get_db)
 ):
     user = request.session.get("user")
+    if not can_manage_requisitions(user):
+        return RedirectResponse(
+            url="/requisitions?msg=Acesso restrito: apenas Docentes e Administração podem abrir pedidos de monitoria.&type=danger",
+            status_code=303
+        )
     
     # Busca turmas abertas / disponíveis
     classes = db.query(SchoolClass).options(
@@ -119,7 +126,15 @@ def create_requisition_form(
 
 @router.post("/create")
 async def create_requisition(request: Request, db: Session = Depends(get_db)):
+    user = request.session.get("user")
+    if not can_manage_requisitions(user):
+        return RedirectResponse(
+            url="/requisitions?msg=Acesso restrito: apenas Docentes e Administração podem abrir pedidos de monitoria.&type=danger",
+            status_code=303
+        )
+
     form = await request.form()
+
     
     school_class_id = int(form.get("school_class_id", 0))
     instructor_id = int(form.get("instructor_id", 0))
@@ -234,12 +249,21 @@ def view_requisition(requisition_id: int, request: Request, db: Session = Depend
 @router.get("/{requisition_id}/edit", response_class=HTMLResponse)
 def edit_requisition_form(requisition_id: int, request: Request, db: Session = Depends(get_db)):
     req = db.query(Requisition).options(
+        joinedload(Requisition.instructor),
         joinedload(Requisition.activities),
         joinedload(Requisition.recommendations).joinedload(Recommendation.student)
     ).filter(Requisition.id == requisition_id).first()
 
     if not req:
         raise HTTPException(status_code=404, detail="Pedido de monitoria não encontrado.")
+
+    user = request.session.get("user")
+    is_owner = bool(user and user.get("codpes") and req.instructor and str(user["codpes"]) == str(req.instructor.codpes))
+    if not is_admin(user) and not is_secretaria(user) and not is_owner:
+        return RedirectResponse(
+            url=f"/requisitions/{requisition_id}?msg=Acesso restrito: você não tem permissão para editar este pedido.&type=danger",
+            status_code=303
+        )
 
     classes = db.query(SchoolClass).options(
         joinedload(SchoolClass.department),
@@ -248,8 +272,6 @@ def edit_requisition_form(requisition_id: int, request: Request, db: Session = D
 
     instructors = db.query(Instructor).order_by(Instructor.nompes).all()
     activities = db.query(Activity).order_by(Activity.description).all()
-
-    user = request.session.get("user")
 
     # Formata recomendações atuais em texto amigável
     rec_texts = []
@@ -275,9 +297,17 @@ def edit_requisition_form(requisition_id: int, request: Request, db: Session = D
 
 @router.post("/{requisition_id}/edit")
 async def edit_requisition(requisition_id: int, request: Request, db: Session = Depends(get_db)):
-    req = db.query(Requisition).filter(Requisition.id == requisition_id).first()
+    req = db.query(Requisition).options(joinedload(Requisition.instructor)).filter(Requisition.id == requisition_id).first()
     if not req:
         raise HTTPException(status_code=404, detail="Pedido de monitoria não encontrado.")
+
+    user = request.session.get("user")
+    is_owner = bool(user and user.get("codpes") and req.instructor and str(user["codpes"]) == str(req.instructor.codpes))
+    if not is_admin(user) and not is_secretaria(user) and not is_owner:
+        return RedirectResponse(
+            url=f"/requisitions/{requisition_id}?msg=Acesso restrito.&type=danger",
+            status_code=303
+        )
 
     form = await request.form()
     req.requested_number = int(form.get("requested_number", 1))
@@ -318,9 +348,17 @@ async def edit_requisition(requisition_id: int, request: Request, db: Session = 
 
 @router.post("/{requisition_id}/delete")
 def delete_requisition(requisition_id: int, request: Request, db: Session = Depends(get_db)):
-    req = db.query(Requisition).filter(Requisition.id == requisition_id).first()
+    req = db.query(Requisition).options(joinedload(Requisition.instructor)).filter(Requisition.id == requisition_id).first()
     if not req:
         raise HTTPException(status_code=404, detail="Pedido não encontrado.")
+
+    user = request.session.get("user")
+    is_owner = bool(user and user.get("codpes") and req.instructor and str(user["codpes"]) == str(req.instructor.codpes))
+    if not is_admin(user) and not is_secretaria(user) and not is_owner:
+        return RedirectResponse(
+            url=f"/requisitions?msg=Acesso restrito: você não tem permissão para excluir este pedido.&type=danger",
+            status_code=303
+        )
 
     db.delete(req)
     db.commit()
@@ -328,3 +366,4 @@ def delete_requisition(requisition_id: int, request: Request, db: Session = Depe
         url="/requisitions?msg=Pedido+de+monitoria+excluído+com+sucesso!&type=info", 
         status_code=303
     )
+

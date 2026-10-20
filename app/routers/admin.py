@@ -19,18 +19,23 @@ from app.models.selection import Selection
 from app.models.frequency import Frequency
 from app.models.scholarship import Scholarship, ModelHasScholarship
 from app.models.mail_template import MailTemplate
+from app.services.permissions import (
+    is_admin,
+    is_secretaria,
+    is_comissao,
+    is_docente,
+    can_manage_selections,
+    can_manage_frequencies,
+    get_user_permissions
+)
 
 router = APIRouter(prefix="/admin", tags=["Administração"])
 templates = Jinja2Templates(directory=os.path.join(os.path.dirname(__file__), "..", "templates"))
 
-def is_admin(user: Optional[dict]) -> bool:
+def has_admin_panel_access(user: Optional[dict]) -> bool:
     if not user:
         return False
-    if user.get("role") == "admin":
-        return True
-    if str(user.get("codpes")) in settings.admin_nusp_list:
-        return True
-    return False
+    return is_admin(user) or is_secretaria(user) or is_comissao(user)
 
 # -------------------------------------------------------------
 # 1. Dashboard Administrativo
@@ -38,11 +43,17 @@ def is_admin(user: Optional[dict]) -> bool:
 @router.get("", response_class=HTMLResponse)
 def admin_dashboard(request: Request, db: Session = Depends(get_db)):
     user = request.session.get("user")
+    if not has_admin_panel_access(user):
+        return RedirectResponse(
+            url="/?msg=Acesso restrito: faça login com perfil administrativo autorizado.&type=danger", 
+            status_code=303
+        )
     
     # Métricas Globais
     total_terms = db.query(SchoolTerm).count()
     total_classes = db.query(SchoolClass).count()
     total_instructors = db.query(Instructor).count()
+
     total_requisitions = db.query(Requisition).count()
     total_requested_monitors = sum(r[0] for r in db.query(Requisition.requested_number).all()) or 0
     total_enrollments = db.query(Enrollment).count()
@@ -102,8 +113,14 @@ def list_selections(
     db: Session = Depends(get_db)
 ):
     user = request.session.get("user")
+    if not has_admin_panel_access(user):
+        return RedirectResponse(
+            url="/?msg=Acesso restrito: faça login com perfil administrativo autorizado.&type=danger", 
+            status_code=303
+        )
 
     # Período ativo padrão
+
     terms = db.query(SchoolTerm).order_by(SchoolTerm.year.desc(), SchoolTerm.period.desc()).all()
     departments = db.query(Department).order_by(Department.nomabvset).all()
     scholarships = db.query(Scholarship).order_by(Scholarship.name).all()
@@ -165,6 +182,10 @@ def list_selections(
 
 @router.post("/selections/create")
 async def create_selection(request: Request, db: Session = Depends(get_db)):
+    user = request.session.get("user")
+    if not has_admin_panel_access(user):
+        return RedirectResponse(url="/?msg=Acesso restrito.&type=danger", status_code=303)
+
     form = await request.form()
     school_class_id = int(form.get("school_class_id", 0))
     student_id = int(form.get("student_id", 0))
@@ -172,8 +193,8 @@ async def create_selection(request: Request, db: Session = Depends(get_db)):
     enrollment_id_raw = form.get("enrollment_id")
     enrollment_id = int(enrollment_id_raw) if enrollment_id_raw else None
 
-    user = request.session.get("user")
     codpescad = str(user.get("codpes")) if user else None
+
 
     # Busca a requisição da turma
     requisition = db.query(Requisition).filter(Requisition.school_class_id == school_class_id).first()
@@ -225,6 +246,10 @@ async def create_selection(request: Request, db: Session = Depends(get_db)):
 
 @router.post("/selections/{selection_id}/status")
 async def update_selection_status(selection_id: int, request: Request, db: Session = Depends(get_db)):
+    user = request.session.get("user")
+    if not has_admin_panel_access(user):
+        return RedirectResponse(url="/?msg=Acesso restrito.&type=danger", status_code=303)
+
     selection = db.query(Selection).filter(Selection.id == selection_id).first()
     if not selection:
         raise HTTPException(status_code=404, detail="Seleção não encontrada.")
@@ -246,6 +271,10 @@ async def update_selection_status(selection_id: int, request: Request, db: Sessi
 
 @router.post("/selections/{selection_id}/delete")
 def delete_selection(selection_id: int, request: Request, db: Session = Depends(get_db)):
+    user = request.session.get("user")
+    if not has_admin_panel_access(user):
+        return RedirectResponse(url="/?msg=Acesso restrito.&type=danger", status_code=303)
+
     selection = db.query(Selection).filter(Selection.id == selection_id).first()
     if not selection:
         raise HTTPException(status_code=404, detail="Seleção não encontrada.")
@@ -275,7 +304,11 @@ def list_frequencies(
     db: Session = Depends(get_db)
 ):
     user = request.session.get("user")
+    if not has_admin_panel_access(user) and not is_docente(user):
+        return RedirectResponse(url="/?msg=Acesso restrito: apenas Administração e Docentes podem atestar frequência.&type=danger", status_code=303)
+
     current_month = month or datetime.now().month
+
 
     terms = db.query(SchoolTerm).order_by(SchoolTerm.year.desc()).all()
     departments = db.query(Department).order_by(Department.nomabvset).all()
@@ -380,10 +413,17 @@ def list_instructors(
     db: Session = Depends(get_db)
 ):
     user = request.session.get("user")
+    if not is_admin(user) and not is_secretaria(user):
+        return RedirectResponse(
+            url="/?msg=Acesso restrito: apenas Administrador e Secretaria.&type=danger", 
+            status_code=303
+        )
+
     query = db.query(Instructor).options(
         joinedload(Instructor.department),
         joinedload(Instructor.school_classes)
     )
+
 
     if department_id:
         query = query.filter(Instructor.department_id == department_id)
@@ -477,6 +517,12 @@ def delete_instructor(instructor_id: int, request: Request, db: Session = Depend
 @router.get("/departments", response_class=HTMLResponse)
 def list_departments(request: Request, db: Session = Depends(get_db)):
     user = request.session.get("user")
+    if not is_admin(user) and not is_secretaria(user):
+        return RedirectResponse(
+            url="/?msg=Acesso restrito: apenas Administrador e Secretaria.&type=danger", 
+            status_code=303
+        )
+
     departments = db.query(Department).options(
         joinedload(Department.school_classes),
         joinedload(Department.instructors)
@@ -497,7 +543,14 @@ def list_departments(request: Request, db: Session = Depends(get_db)):
 @router.get("/mailtemplates", response_class=HTMLResponse)
 def list_mail_templates(request: Request, db: Session = Depends(get_db)):
     user = request.session.get("user")
+    if not is_admin(user) and not is_secretaria(user):
+        return RedirectResponse(
+            url="/?msg=Acesso restrito: apenas Administrador e Secretaria.&type=danger", 
+            status_code=303
+        )
+
     templates_list = db.query(MailTemplate).order_by(MailTemplate.name).all()
+
 
     return templates.TemplateResponse(
         request=request,

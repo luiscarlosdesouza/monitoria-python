@@ -13,12 +13,15 @@
             Gerenciamento das solicitações de monitores realizadas pelos docentes das turmas.
         </p>
     </div>
+    {% if user and (user.role in ['Docente', 'Secretaria', 'Administrador', 'admin', 'docente', 'secretaria']) %}
     <div class="d-flex gap-2">
         <a href="/requisitions/create" class="btn btn-warning fw-semibold px-3 py-2 shadow-sm">
             <i class="fa-solid fa-plus me-1"></i> Fazer Pedido de Monitoria
         </a>
     </div>
+    {% endif %}
 </div>
+
 
 <!-- Cards de Estatísticas -->
 <div class="row g-3 mb-4">
@@ -195,6 +198,7 @@
                             <a href="/requisitions/{{ r.id }}" class="btn btn-outline-primary btn-sm me-1" title="Ver Detalhes">
                                 <i class="fa-solid fa-eye"></i>
                             </a>
+                            {% if user and (user.role in ['Administrador', 'Secretaria', 'admin', 'secretaria'] or (user.role in ['Docente', 'docente'] and r.instructor and (user.codpes|string) == (r.instructor.codpes|string))) %}
                             <a href="/requisitions/{{ r.id }}/edit" class="btn btn-outline-secondary btn-sm me-1" title="Editar">
                                 <i class="fa-solid fa-pen-to-square"></i>
                             </a>
@@ -229,7 +233,9 @@
                                     </div>
                                 </div>
                             </div>
+                            {% endif %}
                         </td>
+
                     </tr>
                     {% endfor %}
                 {% else %}

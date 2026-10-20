@@ -123,12 +123,19 @@
                     <li class="nav-item">
                         <a class="nav-link" href="/enrollments"><i class="fa-solid fa-user-plus me-1"></i> Inscrições Alunos</a>
                     </li>
+                    {% if user and (user.role in ['Administrador', 'Secretaria', 'admin', 'secretaria']) %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="/users"><i class="fa-solid fa-users me-1"></i> Usuários</a>
+                    </li>
+                    {% endif %}
+                    {% if user and (user.role in ['Administrador', 'Secretaria', 'Presidente de Comissão', 'Membro de Comissão', 'admin']) %}
                     <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle" href="#" id="adminDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                             <i class="fa-solid fa-gear me-1"></i> Administração
                         </a>
                         <ul class="dropdown-menu dropdown-menu-dark shadow-sm border-0" aria-labelledby="adminDropdown">
                             <li><a class="dropdown-item" href="/admin"><i class="fa-solid fa-chart-pie me-2 text-warning"></i> Painel Geral</a></li>
+                            <li><a class="dropdown-item" href="/users"><i class="fa-solid fa-users-gear me-2 text-primary"></i> Gestão de Usuários</a></li>
                             <li><hr class="dropdown-divider border-secondary"></li>
                             <li><h6 class="dropdown-header text-uppercase text-light opacity-75 small">Processo Seletivo</h6></li>
                             <li><a class="dropdown-item" href="/admin/selections"><i class="fa-solid fa-user-check me-2 text-success"></i> Seleção de Monitores</a></li>
@@ -140,12 +147,18 @@
                             <li><a class="dropdown-item" href="/admin/mailtemplates"><i class="fa-solid fa-envelope-open-text me-2 text-danger"></i> Modelos de E-mail</a></li>
                         </ul>
                     </li>
+                    {% endif %}
                 </ul>
                 <div class="d-flex align-items-center gap-2">
                     {% if user %}
-                        <span class="text-white-50 small me-2">
-                            <i class="fa-solid fa-user-circle me-1"></i> {{ user.name }} ({{ user.role }})
-                        </span>
+                        <div class="d-flex align-items-center me-2">
+                            <span class="text-white small me-2">
+                                <i class="fa-solid fa-user-circle me-1"></i> {{ user.name }}
+                            </span>
+                            <span class="badge bg-warning text-dark fw-bold rounded-pill" style="font-size: 0.72rem;">
+                                {{ user.role }}
+                            </span>
+                        </div>
                         <a href="/auth/logout" class="btn btn-outline-light btn-sm">Sair</a>
                     {% else %}
                         <a href="/auth/login" class="btn btn-warning btn-sm fw-bold">
@@ -156,6 +169,7 @@
             </div>
         </div>
     </nav>
+
 
     <!-- Main Content -->
     <main class="container my-4 flex-grow-1">

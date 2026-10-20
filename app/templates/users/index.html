@@ -1,0 +1,397 @@
+{% extends "base.html" %}
+
+{% block title %}Gestão de Usuários e Perfis - Monitoria IME-USP{% endblock %}
+
+{% block content %}
+<!-- Cabeçalho Principal -->
+<div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-3">
+    <div>
+        <h2 class="fw-bold mb-1 text-dark">
+            <i class="fa-solid fa-users-gear text-primary me-2"></i> Gestão de Usuários e Perfis
+        </h2>
+        <p class="text-secondary mb-0">
+            Gerencie as funções de acesso, permissões e contas vinculadas à Senha Única USP.
+        </p>
+    </div>
+    {% if perms.can_manage_users %}
+    <div class="d-flex gap-2">
+        <button type="button" class="btn btn-usp fw-semibold px-3 py-2 shadow-sm" data-bs-toggle="modal" data-bs-target="#createUserModal">
+            <i class="fa-solid fa-user-plus me-1"></i> + Novo Usuário / Atribuir Função
+        </button>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Métricas de Perfis -->
+<div class="row g-3 mb-4">
+    <div class="col-xl-2 col-md-4 col-sm-6">
+        <div class="card card-custom p-3 border-start border-4 border-dark h-100">
+            <div class="d-flex align-items-center">
+                <div class="p-2.5 bg-dark bg-opacity-10 text-dark rounded-3 me-3">
+                    <i class="fa-solid fa-users fa-xl"></i>
+                </div>
+                <div>
+                    <span class="text-muted text-uppercase smaller fw-bold d-block">Total</span>
+                    <h4 class="fw-bold mb-0 text-dark">{{ stats.total }}</h4>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-2 col-md-4 col-sm-6">
+        <div class="card card-custom p-3 border-start border-4 border-danger h-100">
+            <div class="d-flex align-items-center">
+                <div class="p-2.5 bg-danger bg-opacity-10 text-danger rounded-3 me-3">
+                    <i class="fa-solid fa-user-shield fa-xl"></i>
+                </div>
+                <div>
+                    <span class="text-muted text-uppercase smaller fw-bold d-block">Administrador</span>
+                    <h4 class="fw-bold mb-0 text-danger">{{ stats.get("Administrador", 0) }}</h4>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-2 col-md-4 col-sm-6">
+        <div class="card card-custom p-3 border-start border-4 border-primary h-100">
+            <div class="d-flex align-items-center">
+                <div class="p-2.5 bg-primary bg-opacity-10 text-primary rounded-3 me-3">
+                    <i class="fa-solid fa-id-badge fa-xl"></i>
+                </div>
+                <div>
+                    <span class="text-muted text-uppercase smaller fw-bold d-block">Secretaria</span>
+                    <h4 class="fw-bold mb-0 text-primary">{{ stats.get("Secretaria", 0) }}</h4>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-2 col-md-4 col-sm-6">
+        <div class="card card-custom p-3 border-start border-4 border-secondary h-100">
+            <div class="d-flex align-items-center">
+                <div class="p-2.5 bg-secondary bg-opacity-10 text-secondary rounded-3 me-3">
+                    <i class="fa-solid fa-chalkboard-user fa-xl"></i>
+                </div>
+                <div>
+                    <span class="text-muted text-uppercase smaller fw-bold d-block">Docente</span>
+                    <h4 class="fw-bold mb-0 text-secondary">{{ stats.get("Docente", 0) }}</h4>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-2 col-md-4 col-sm-6">
+        <div class="card card-custom p-3 border-start border-4 border-info h-100">
+            <div class="d-flex align-items-center">
+                <div class="p-2.5 bg-info bg-opacity-10 text-info rounded-3 me-3">
+                    <i class="fa-solid fa-crown fa-xl"></i>
+                </div>
+                <div>
+                    <span class="text-muted text-uppercase smaller fw-bold d-block">Comissão</span>
+                    <h4 class="fw-bold mb-0 text-info">{{ stats.get("Presidente de Comissão", 0) + stats.get("Membro de Comissão", 0) }}</h4>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-2 col-md-4 col-sm-6">
+        <div class="card card-custom p-3 border-start border-4 border-success h-100">
+            <div class="d-flex align-items-center">
+                <div class="p-2.5 bg-success bg-opacity-10 text-success rounded-3 me-3">
+                    <i class="fa-solid fa-user-graduate fa-xl"></i>
+                </div>
+                <div>
+                    <span class="text-muted text-uppercase smaller fw-bold d-block">Aluno/Monitor</span>
+                    <h4 class="fw-bold mb-0 text-success">{{ stats.get("Aluno", 0) + stats.get("Monitor", 0) }}</h4>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Filtros e Busca -->
+<div class="card card-custom p-3 mb-4">
+    <form method="GET" action="/users" class="row g-2 align-items-center">
+        <div class="col-md-5">
+            <div class="input-group">
+                <span class="input-group-text bg-light text-muted border-end-0">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                </span>
+                <input type="text" name="q" value="{{ q }}" class="form-control border-start-0" 
+                       placeholder="Buscar por Nome, Nº USP ou E-mail...">
+            </div>
+        </div>
+        <div class="col-md-4">
+            <select name="role_filter" class="form-select" onchange="this.form.submit()">
+                <option value="all" {% if role_filter == 'all' %}selected{% endif %}>Todos os Perfis ({{ stats.total }})</option>
+                {% for r in roles %}
+                    <option value="{{ r }}" {% if role_filter == r %}selected{% endif %}>
+                        {{ r }} ({{ stats.get(r, 0) }})
+                    </option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-3 d-flex gap-2">
+            <button type="submit" class="btn btn-primary flex-grow-1">
+                <i class="fa-solid fa-filter me-1"></i> Filtrar
+            </button>
+            {% if q or (role_filter and role_filter != 'all') %}
+                <a href="/users" class="btn btn-outline-secondary" title="Limpar filtros">
+                    <i class="fa-solid fa-xmark"></i>
+                </a>
+            {% endif %}
+        </div>
+    </form>
+</div>
+
+<!-- Tabela de Usuários -->
+<div class="card card-custom overflow-hidden mb-4 shadow-sm">
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead class="table-light">
+                <tr class="text-secondary small text-uppercase">
+                    <th class="ps-4" style="width: 25%;">Nome</th>
+                    <th style="width: 15%;">Número USP</th>
+                    <th style="width: 25%;">E-mail</th>
+                    <th class="text-center" style="width: 20%;">Perfil de Acesso</th>
+                    <th class="text-end pe-4" style="width: 15%;">Ações</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for u in users %}
+                {% set u_role = u.role %}
+                {% set badge = role_badges.get(u_role, {"bg": "secondary", "icon": "fa-user", "label": u_role}) %}
+                <tr>
+                    <!-- Nome -->
+                    <td class="ps-4">
+                        <div class="d-flex align-items-center">
+                            <div class="avatar-circle me-3 bg-light text-primary fw-bold border">
+                                {{ u.name[:2].upper() }}
+                            </div>
+                            <div>
+                                <a href="/users/{{ u.id }}" class="fw-bold text-dark text-decoration-none">
+                                    {{ u.name }}
+                                </a>
+                                {% if (u.codpes|string) in admin_nusp_list %}
+                                    <span class="badge bg-danger-subtle text-danger border border-danger-subtle ms-1" style="font-size: 0.65rem;" title="Configurado como Admin nas variáveis de ambiente">
+                                        <i class="fa-solid fa-shield-halved"></i> Root Admin
+                                    </span>
+                                {% endif %}
+                                <div class="text-muted smaller">
+                                    Cadastrado em {{ u.created_at.strftime('%d/%m/%Y') if u.created_at else 'N/D' }}
+                                </div>
+                            </div>
+                        </div>
+                    </td>
+
+                    <!-- Número USP -->
+                    <td>
+                        {% if u.codpes %}
+                            <span class="badge bg-light text-dark border font-monospace px-2.5 py-1.5 fs-6">
+                                {{ u.codpes }}
+                            </span>
+                        {% else %}
+                            <span class="text-muted small fst-italic">Não informado</span>
+                        {% endif %}
+                    </td>
+
+                    <!-- E-mail -->
+                    <td>
+                        <a href="mailto:{{ u.email }}" class="text-secondary text-decoration-none">
+                            <i class="fa-regular fa-envelope me-1 text-muted"></i> {{ u.email }}
+                        </a>
+                    </td>
+
+                    <!-- Perfil -->
+                    <td class="text-center">
+                        <span class="badge bg-{{ badge.bg }}-subtle text-{{ badge.bg }} border border-{{ badge.bg }}-subtle px-3 py-2 rounded-pill fw-semibold">
+                            <i class="fa-solid {{ badge.icon }} me-1"></i> {{ u.role }}
+                        </span>
+                    </td>
+
+                    <!-- Ações -->
+                    <td class="text-end pe-4 text-nowrap">
+                        <!-- Ver Detalhes -->
+                        <a href="/users/{{ u.id }}" class="btn btn-sm btn-outline-primary me-1" title="Ver Detalhes do Usuário">
+                            <i class="fa-solid fa-eye"></i>
+                        </a>
+
+                        {% if perms.can_manage_users %}
+                            <!-- Editar Perfil -->
+                            <button type="button" class="btn btn-sm btn-outline-secondary me-1" title="Editar Perfil"
+                                    data-bs-toggle="modal" data-bs-target="#editUserModal{{ u.id }}">
+                                <i class="fa-solid fa-pen-to-square"></i>
+                            </button>
+
+                            <!-- Excluir Usuário -->
+                            <button type="button" class="btn btn-sm btn-outline-danger" title="Excluir Usuário"
+                                    data-bs-toggle="modal" data-bs-target="#deleteUserModal{{ u.id }}"
+                                    {% if user and user.id == u.id %}disabled title="Você não pode excluir a si mesmo"{% endif %}>
+                                <i class="fa-solid fa-trash"></i>
+                            </button>
+                        {% endif %}
+
+                        {% if perms.can_manage_users %}
+                        <!-- Modal Edição de Perfil -->
+                        <div class="modal fade" id="editUserModal{{ u.id }}" tabindex="-1" aria-hidden="true">
+                            <div class="modal-dialog modal-dialog-centered text-start">
+                                <div class="modal-content">
+                                    <form action="/users/{{ u.id }}/edit" method="POST">
+                                        <div class="modal-header">
+                                            <h5 class="modal-title fw-bold">
+                                                <i class="fa-solid fa-user-pen text-primary me-2"></i> Editar Usuário e Perfil
+                                            </h5>
+                                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+                                        </div>
+                                        <div class="modal-body">
+                                            <div class="mb-3">
+                                                <label class="form-label fw-semibold">Nome Completo</label>
+                                                <input type="text" name="name" value="{{ u.name }}" class="form-control" required>
+                                            </div>
+                                            <div class="row g-2 mb-3">
+                                                <div class="col-md-6">
+                                                    <label class="form-label fw-semibold">Número USP</label>
+                                                    <input type="number" name="codpes" value="{{ u.codpes or '' }}" class="form-control font-monospace">
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <label class="form-label fw-semibold">E-mail</label>
+                                                    <input type="email" name="email" value="{{ u.email }}" class="form-control" required>
+                                                </div>
+                                            </div>
+                                            <div class="mb-3">
+                                                <label class="form-label fw-semibold text-primary">Perfil de Acesso (Função)</label>
+                                                <select name="role" class="form-select form-select-lg border-primary" required>
+                                                    {% for r in roles %}
+                                                        <option value="{{ r }}" {% if u.role == r %}selected{% endif %}>
+                                                            {{ r }}
+                                                        </option>
+                                                    {% endfor %}
+                                                </select>
+                                                <div class="form-text mt-1">
+                                                    Define as telas liberadas, permissões e ações permitidas para este usuário.
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="modal-footer">
+                                            <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancelar</button>
+                                            <button type="submit" class="btn btn-primary fw-semibold">
+                                                <i class="fa-solid fa-floppy-disk me-1"></i> Salvar Alterações
+                                            </button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Modal Exclusão de Usuário -->
+                        <div class="modal fade" id="deleteUserModal{{ u.id }}" tabindex="-1" aria-hidden="true">
+                            <div class="modal-dialog modal-dialog-centered text-start">
+                                <div class="modal-content">
+                                    <div class="modal-header border-0 pb-0">
+                                        <h5 class="modal-title fw-bold text-danger">
+                                            <i class="fa-solid fa-triangle-exclamation me-2"></i> Confirmar Exclusão
+                                        </h5>
+                                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+                                    </div>
+                                    <div class="modal-body py-3">
+                                        Deseja realmente remover o usuário <strong>{{ u.name }}</strong> (Nº USP: {{ u.codpes or 'N/D' }})?
+                                        <div class="alert alert-warning small mt-3 mb-0">
+                                            <i class="fa-solid fa-circle-exclamation me-1"></i>
+                                            Ao remover este usuário, suas permissões e atribuições de perfil serão revogadas. Caso ele efetue novo login via Senha Única USP, será recadastrado com a função padrão inicial.
+                                        </div>
+                                    </div>
+                                    <div class="modal-footer border-0 pt-0">
+                                        <button type="button" class="btn btn-light btn-sm" data-bs-dismiss="modal">Cancelar</button>
+                                        <form action="/users/{{ u.id }}/delete" method="POST" class="d-inline">
+                                            <button type="submit" class="btn btn-danger btn-sm fw-semibold">
+                                                <i class="fa-solid fa-trash me-1"></i> Confirmar Exclusão
+                                            </button>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="5" class="text-center py-5 text-muted">
+                        <i class="fa-solid fa-user-slash fa-3x mb-3 text-secondary opacity-50 d-block"></i>
+                        <h5>Nenhum usuário encontrado</h5>
+                        <p class="small mb-0">Tente ajustar seus termos de busca ou filtros de perfil.</p>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+{% if perms.can_manage_users %}
+<!-- Modal Cadastrar Usuário / Atribuir Função -->
+<div class="modal fade" id="createUserModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered text-start">
+        <div class="modal-content">
+            <form action="/users/create" method="POST">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title fw-bold">
+                        <i class="fa-solid fa-user-plus me-2"></i> Cadastrar Usuário / Atribuir Função
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Fechar"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="alert alert-info small mb-3">
+                        <i class="fa-solid fa-circle-info me-1"></i>
+                        Você pode cadastrar previamente um usuário por Número USP ou E-mail para atribuir uma função antes mesmo de ele realizar o primeiro login no sistema.
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Nome Completo <span class="text-danger">*</span></label>
+                        <input type="text" name="name" class="form-control" placeholder="Ex: Maria dos Santos" required>
+                    </div>
+                    <div class="row g-2 mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Número USP</label>
+                            <input type="number" name="codpes" class="form-control font-monospace" placeholder="Ex: 1234567">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">E-mail <span class="text-danger">*</span></label>
+                            <input type="email" name="email" class="form-control" placeholder="usuario@usp.br" required>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold text-primary">Perfil de Acesso (Função) <span class="text-danger">*</span></label>
+                        <select name="role" class="form-select border-primary" required>
+                            {% for r in roles %}
+                                <option value="{{ r }}" {% if r == 'Secretaria' %}selected{% endif %}>
+                                    {{ r }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                        <div class="form-text mt-1">
+                            Selecione uma das 7 funções oficiais: Secretaria, Docente, Aluno, Monitor, Presidente de Comissão, Membro de Comissão ou Administrador.
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary fw-semibold">
+                        <i class="fa-solid fa-check me-1"></i> Cadastrar Usuário
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<style>
+.avatar-circle {
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.85rem;
+}
+.smaller {
+    font-size: 0.78rem;
+}
+</style>
+{% endblock %}

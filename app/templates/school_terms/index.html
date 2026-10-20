@@ -13,12 +13,15 @@
             Gerencie os semestres acadêmicos, cronogramas de requisição dos docentes e períodos de inscrição de monitores.
         </p>
     </div>
+    {% if user and (user.role in ['Administrador', 'Secretaria', 'admin', 'secretaria']) %}
     <div class="d-flex gap-2">
         <a href="/schoolterms/create" class="btn btn-usp fw-semibold px-3 py-2 shadow-sm">
             <i class="fa-solid fa-plus me-1"></i> Novo Período Letivo
         </a>
     </div>
+    {% endif %}
 </div>
+
 
 <!-- Cards de Estatísticas -->
 <div class="row g-3 mb-4">
@@ -184,6 +187,7 @@
                             <a href="/schoolterms/{{ term.id }}" class="btn btn-sm btn-outline-primary me-1" title="Ver Detalhes">
                                 <i class="fa-solid fa-eye"></i>
                             </a>
+                            {% if user and (user.role in ['Administrador', 'Secretaria', 'admin', 'secretaria']) %}
                             <a href="/schoolterms/{{ term.id }}/edit" class="btn btn-sm btn-outline-secondary me-1" title="Editar">
                                 <i class="fa-solid fa-pen-to-square"></i>
                             </a>
@@ -219,7 +223,9 @@
                                     </div>
                                 </div>
                             </div>
+                            {% endif %}
                         </td>
+
                     </tr>
                     {% endfor %}
                 {% else %}

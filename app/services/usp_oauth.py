@@ -117,18 +117,19 @@ class USPOAuthService:
             or (f"{codpes}@usp.br" if codpes.isdigit() else "")
         )
         
-        # Determinação do perfil
+        # Determinação do perfil padrão inicial
+        from app.models.user import ROLE_ADMINISTRADOR, ROLE_DOCENTE, ROLE_ALUNO
         is_admin = codpes in settings.admin_nusp_list
-        role = "admin" if is_admin else "user"
+        role = ROLE_ADMINISTRADOR if is_admin else ROLE_ALUNO
 
         # Verificar vínculos no retorno (Docente, Aluno, Funcionário)
         vinculos = raw.get("vinculo", [])
         if isinstance(vinculos, list):
             tipos = [str(v.get("tipoVinculo", "")).upper() for v in vinculos if isinstance(v, dict)]
             if "DOCENTE" in tipos:
-                role = "docente" if not is_admin else "admin"
+                role = ROLE_DOCENTE if not is_admin else ROLE_ADMINISTRADOR
             elif any("ALUNO" in t for t in tipos):
-                role = "aluno" if not is_admin else "admin"
+                role = ROLE_ALUNO if not is_admin else ROLE_ADMINISTRADOR
 
         return {
             "codpes": int(codpes) if codpes.isdigit() else None,
@@ -139,3 +140,4 @@ class USPOAuthService:
         }
 
 usp_oauth_service = USPOAuthService()
+

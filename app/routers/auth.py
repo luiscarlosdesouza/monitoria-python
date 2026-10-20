@@ -57,7 +57,8 @@ def auth_callback(
         codpes = user_info.get("codpes")
         name = user_info.get("name", "Usuário USP")
         email = user_info.get("email") or f"{codpes}@usp.br"
-        role = user_info.get("role", "user")
+        from app.models.user import ROLE_ADMINISTRADOR, ROLE_ALUNO, normalize_role
+        role = normalize_role(user_info.get("role", ROLE_ALUNO))
 
         # Localiza ou cadastra o usuário no banco local
         user = db.query(User).filter(User.codpes == codpes).first() if codpes else None
@@ -75,7 +76,14 @@ def auth_callback(
         else:
             user.name = name
             user.email = email
-            user.role = role
+            # Se estiver na lista de admins, garante Administrador
+            if str(codpes) in settings.admin_nusp_list:
+                user.role = ROLE_ADMINISTRADOR
+            elif user.role:
+                # Preserva o perfil que foi configurado para ele no sistema de monitoria
+                user.role = normalize_role(user.role)
+            else:
+                user.role = role
 
         db.commit()
         db.refresh(user)
@@ -107,22 +115,33 @@ def logout(request: Request):
     return RedirectResponse(url="/", status_code=303)
 
 @router.get("/auth/dev-login")
-def dev_login(request: Request, codpes: int = 7762448, role: str = "admin", db: Session = Depends(get_db)):
+def dev_login(request: Request, codpes: int = 7762448, role: str = "Administrador", name: str = None, db: Session = Depends(get_db)):
     """
-    Atalho exclusivo de desenvolvimento para testar permissões rapidamente.
+    Atalho exclusivo de desenvolvimento para testar os 7 perfis do sistema rapidamente.
     """
     if settings.ENVIRONMENT != "development":
         raise HTTPException(status_code=403, detail="Não permitido em produção.")
 
+    from app.models.user import normalize_role
+    target_role = normalize_role(role)
+
     user = db.query(User).filter(User.codpes == codpes).first()
+    user_name = name or f"Usuário {target_role} ({codpes})"
+    
     if not user:
         user = User(
-            name=f"Admin Teste ({codpes})",
-            email=f"admin.{codpes}@ime.usp.br",
+            name=user_name,
+            email=f"{codpes}@ime.usp.br",
             codpes=codpes,
-            role=role
+            role=target_role
         )
         db.add(user)
+        db.commit()
+        db.refresh(user)
+    else:
+        user.role = target_role
+        if name:
+            user.name = name
         db.commit()
         db.refresh(user)
 
@@ -134,3 +153,4 @@ def dev_login(request: Request, codpes: int = 7762448, role: str = "admin", db: 
         "role": user.role
     }
     return RedirectResponse(url="/", status_code=303)
+
