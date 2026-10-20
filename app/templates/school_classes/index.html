@@ -3,57 +3,142 @@
 {% block title %}Disciplinas & Turmas - Monitoria IME-USP{% endblock %}
 
 {% block content %}
+<!-- Cabeçalho Principal -->
 <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-3">
     <div>
-        <h2 class="fw-bold mb-1"><i class="fa-solid fa-chalkboard-user text-primary me-2"></i> Disciplinas e Turmas</h2>
-        <p class="text-muted mb-0">Consulte turmas oferecidas, docentes responsáveis e horários das aulas.</p>
+        <h2 class="fw-bold mb-1 text-dark">
+            <i class="fa-solid fa-chalkboard-user text-primary me-2"></i> Disciplinas e Turmas
+        </h2>
+        <p class="text-secondary mb-0">
+            Consulte turmas oferecidas pelo instituto, horários de aulas, docentes e pedidos de monitoria.
+        </p>
+    </div>
+    <div class="d-flex gap-2">
+        <a href="/schoolclasses/create" class="btn btn-usp fw-semibold px-3 py-2 shadow-sm">
+            <i class="fa-solid fa-plus me-1"></i> Cadastrar Nova Turma
+        </a>
     </div>
 </div>
 
-<!-- Filtros -->
-<div class="card card-custom p-3 mb-4">
-    <form method="get" action="/schoolclasses" class="row g-3">
+<!-- Cards de Estatísticas -->
+<div class="row g-3 mb-4">
+    <div class="col-md-3 col-sm-6">
+        <div class="card card-custom p-3 border-start border-4 border-primary">
+            <div class="d-flex align-items-center">
+                <div class="p-3 bg-primary bg-opacity-10 text-primary rounded-3 me-3">
+                    <i class="fa-solid fa-chalkboard-user fa-2x"></i>
+                </div>
+                <div>
+                    <h6 class="text-muted text-uppercase mb-1 small fw-bold">Total de Turmas</h6>
+                    <h3 class="fw-bold mb-0 text-dark">{{ stats.total_classes }}</h3>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 col-sm-6">
+        <div class="card card-custom p-3 border-start border-4 border-info">
+            <div class="d-flex align-items-center">
+                <div class="p-3 bg-info bg-opacity-10 text-info rounded-3 me-3">
+                    <i class="fa-solid fa-book-bookmark fa-2x"></i>
+                </div>
+                <div>
+                    <h6 class="text-muted text-uppercase mb-1 small fw-bold">Disciplinas Únicas</h6>
+                    <h3 class="fw-bold mb-0 text-dark">{{ stats.unique_disciplines }}</h3>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 col-sm-6">
+        <div class="card card-custom p-3 border-start border-4 border-warning">
+            <div class="d-flex align-items-center">
+                <div class="p-3 bg-warning bg-opacity-10 text-warning rounded-3 me-3">
+                    <i class="fa-solid fa-clipboard-list fa-2x"></i>
+                </div>
+                <div>
+                    <h6 class="text-muted text-uppercase mb-1 small fw-bold">Com Pedido Docente</h6>
+                    <h3 class="fw-bold mb-0 text-dark">{{ stats.classes_with_req }}</h3>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 col-sm-6">
+        <div class="card card-custom p-3 border-start border-4 border-success">
+            <div class="d-flex align-items-center">
+                <div class="p-3 bg-success bg-opacity-10 text-success rounded-3 me-3">
+                    <i class="fa-solid fa-user-graduate fa-2x"></i>
+                </div>
+                <div>
+                    <h6 class="text-muted text-uppercase mb-1 small fw-bold">Inscrições de Alunos</h6>
+                    <h3 class="fw-bold mb-0 text-dark">{{ stats.total_enrollments }}</h3>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Filtros de Consulta -->
+<div class="card card-custom p-3 mb-4 bg-white">
+    <form method="GET" action="/schoolclasses" class="row g-2 align-items-end">
         <div class="col-md-3">
-            <label class="form-label small fw-semibold">Período Letivo</label>
-            <select name="term_id" class="form-select">
+            <label class="form-label small fw-semibold text-secondary mb-1">Buscar Disciplina ou Turma</label>
+            <div class="input-group input-group-sm">
+                <span class="input-group-text"><i class="fa-solid fa-magnifying-glass"></i></span>
+                <input type="text" name="search" class="form-control" placeholder="MAC0110, Cálculo, Turma 45..." value="{{ search }}">
+            </div>
+        </div>
+        <div class="col-md-3">
+            <label class="form-label small fw-semibold text-secondary mb-1">Período Letivo</label>
+            <select name="term_id" class="form-select form-select-sm">
                 <option value="">Todos os períodos</option>
                 {% for t in terms %}
-                <option value="{{ t.id }}" {% if selected_term == t.id %}selected{% endif %}>{{ t.year }} - {{ t.period }}</option>
+                    <option value="{{ t.id }}" {% if selected_term == t.id %}selected{% endif %}>
+                        {{ t.year }}/{{ t.period }} ({{ t.status }})
+                    </option>
                 {% endfor %}
             </select>
         </div>
-        <div class="col-md-3">
-            <label class="form-label small fw-semibold">Departamento</label>
-            <select name="department_id" class="form-select">
-                <option value="">Todos os departamentos</option>
+        <div class="col-md-2">
+            <label class="form-label small fw-semibold text-secondary mb-1">Departamento</label>
+            <select name="department_id" class="form-select form-select-sm">
+                <option value="">Todos</option>
                 {% for d in departments %}
-                <option value="{{ d.id }}" {% if selected_dept == d.id %}selected{% endif %}>{{ d.nomabvset }} - {{ d.nomset }}</option>
+                    <option value="{{ d.id }}" {% if selected_dept == d.id %}selected{% endif %}>
+                        {{ d.nomabvset }} - {{ d.nomset }}
+                    </option>
                 {% endfor %}
             </select>
         </div>
-        <div class="col-md-4">
-            <label class="form-label small fw-semibold">Buscar por código ou nome</label>
-            <input type="text" name="search" class="form-control" placeholder="Ex: MAC0110, Cálculo, Turma 04..." value="{{ search or '' }}">
+        <div class="col-md-2">
+            <label class="form-label small fw-semibold text-secondary mb-1">Pedido de Monitoria</label>
+            <select name="has_requisition" class="form-select form-select-sm">
+                <option value="">Todas as turmas</option>
+                <option value="1" {% if selected_has_req == '1' %}selected{% endif %}>Com Pedido Aberto</option>
+                <option value="0" {% if selected_has_req == '0' %}selected{% endif %}>Sem Pedido</option>
+            </select>
         </div>
-        <div class="col-md-2 d-flex align-items-end">
-            <button type="submit" class="btn btn-usp w-100">
+        <div class="col-md-2 d-flex gap-2">
+            <button type="submit" class="btn btn-primary btn-sm w-100 fw-semibold">
                 <i class="fa-solid fa-filter me-1"></i> Filtrar
             </button>
+            <a href="/schoolclasses" class="btn btn-outline-secondary btn-sm" title="Limpar Filtros">
+                <i class="fa-solid fa-rotate-left"></i>
+            </a>
         </div>
     </form>
 </div>
 
-<!-- Listagem -->
-<div class="card card-custom p-0 overflow-hidden">
+<!-- Listagem de Turmas -->
+<div class="card card-custom p-0 overflow-hidden shadow-sm">
     <div class="table-responsive">
         <table class="table table-hover align-middle mb-0">
             <thead class="table-light">
                 <tr>
-                    <th class="ps-4">Código</th>
-                    <th>Disciplina</th>
-                    <th>Turma</th>
+                    <th class="ps-4">Disciplina</th>
+                    <th>Turma & Tipo</th>
                     <th>Departamento</th>
                     <th>Docente(s)</th>
+                    <th>Horários</th>
+                    <th class="text-center">Monitoria</th>
                     <th class="text-end pe-4">Ações</th>
                 </tr>
             </thead>
@@ -61,31 +146,110 @@
                 {% if classes %}
                     {% for c in classes %}
                     <tr>
-                        <td class="ps-4 fw-bold text-primary">{{ c.coddis }}</td>
-                        <td>{{ c.nomdis or 'Sem título' }}</td>
-                        <td><span class="badge bg-light text-dark border">{{ c.codtur }}</span></td>
-                        <td>{{ c.department.nomabvset if c.department else '-' }}</td>
+                        <td class="ps-4">
+                            <div class="fw-bold text-primary">{{ c.coddis }}</div>
+                            <div class="small text-dark">{{ c.nomdis or 'Sem título cadastrado' }}</div>
+                        </td>
+                        <td>
+                            <span class="badge bg-light text-dark border fs-6">Turma {{ c.codtur }}</span>
+                            <div class="smaller text-muted mt-1">{{ c.tiptur or 'Teórica' }}</div>
+                        </td>
+                        <td>
+                            <span class="badge bg-secondary-subtle text-secondary">
+                                {{ c.department.nomabvset if c.department else 'IME' }}
+                            </span>
+                        </td>
                         <td>
                             {% if c.instructors %}
                                 {% for inst in c.instructors %}
-                                    <span class="d-block small"><i class="fa-regular fa-user text-secondary me-1"></i> {{ inst.nompes }}</span>
+                                    <div class="small fw-semibold text-dark">
+                                        <i class="fa-regular fa-user text-secondary me-1"></i> {{ inst.nompes }}
+                                    </div>
                                 {% endfor %}
                             {% else %}
-                                <span class="text-muted small">Não atribuído</span>
+                                <span class="text-muted small fst-italic">A definir</span>
                             {% endif %}
                         </td>
-                        <td class="text-end pe-4">
-                            <a href="/schoolclasses/{{ c.id }}" class="btn btn-sm btn-outline-primary">
-                                <i class="fa-solid fa-eye me-1"></i> Ver Turma
+                        <td>
+                            {% if c.class_schedules %}
+                                <div class="d-flex flex-wrap gap-1">
+                                    {% for sch in c.class_schedules %}
+                                        <span class="badge bg-light text-dark border small" title="Horário de aula">
+                                            <i class="fa-regular fa-clock me-1 text-secondary"></i> {{ sch.diasmnocp }} {{ sch.horent }}-{{ sch.horsai }}
+                                        </span>
+                                    {% endfor %}
+                                </div>
+                            {% else %}
+                                <span class="text-muted small fst-italic">Não cadastrado</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-center">
+                            {% if c.requisitions %}
+                                <span class="badge bg-warning-subtle text-warning-emphasis px-2.5 py-1.5 rounded-pill mb-1" title="Vagas solicitadas por docentes">
+                                    <i class="fa-solid fa-clipboard-check me-1"></i> Pedido: {{ c.requisitions[0].requested_number }} vaga(s)
+                                </span>
+                            {% else %}
+                                <span class="badge bg-light text-muted border small mb-1">Sem pedido</span>
+                            {% endif %}
+                            <div>
+                                <span class="smaller text-muted">
+                                    <i class="fa-solid fa-users me-1 text-info"></i> {{ c.enrollments|length }} candidato(s)
+                                </span>
+                            </div>
+                        </td>
+                        <td class="text-end pe-4 text-nowrap">
+                            <a href="/schoolclasses/{{ c.id }}" class="btn btn-sm btn-outline-primary me-1" title="Ver Detalhes">
+                                <i class="fa-solid fa-eye"></i>
                             </a>
+                            <a href="/schoolclasses/{{ c.id }}/edit" class="btn btn-sm btn-outline-secondary me-1" title="Editar">
+                                <i class="fa-solid fa-pen-to-square"></i>
+                            </a>
+                            <button type="button" class="btn btn-sm btn-outline-danger" title="Excluir"
+                                    data-bs-toggle="modal" data-bs-target="#deleteClassModal{{ c.id }}">
+                                <i class="fa-solid fa-trash"></i>
+                            </button>
+
+                            <!-- Modal Exclusão Turma -->
+                            <div class="modal fade" id="deleteClassModal{{ c.id }}" tabindex="-1" aria-hidden="true">
+                                <div class="modal-dialog modal-dialog-centered">
+                                    <div class="modal-content text-start">
+                                        <div class="modal-header border-0 pb-0">
+                                            <h5 class="modal-title fw-bold text-danger">
+                                                <i class="fa-solid fa-triangle-exclamation me-2"></i> Confirmar Exclusão
+                                            </h5>
+                                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+                                        </div>
+                                        <div class="modal-body py-3">
+                                            Deseja realmente excluir a turma <strong>{{ c.coddis }} - Turma {{ c.codtur }}</strong>?
+                                            <div class="small text-muted mt-2">
+                                                Esta ação removerá a turma do catálogo e cancelará eventuais pedidos e inscrições vinculadas.
+                                            </div>
+                                        </div>
+                                        <div class="modal-footer border-0 pt-0">
+                                            <button type="button" class="btn btn-light btn-sm" data-bs-dismiss="modal">Cancelar</button>
+                                            <form action="/schoolclasses/{{ c.id }}/delete" method="POST" class="d-inline">
+                                                <button type="submit" class="btn btn-danger btn-sm fw-semibold">
+                                                    Sim, Excluir Turma
+                                                </button>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                         </td>
                     </tr>
                     {% endfor %}
                 {% else %}
                     <tr>
-                        <td colspan="6" class="text-center py-5 text-muted">
-                            <i class="fa-solid fa-magnifying-glass fa-3x mb-3 d-block opacity-50"></i>
-                            Nenhuma turma encontrada com os filtros selecionados.
+                        <td colspan="7" class="text-center py-5 text-muted">
+                            <div class="py-4">
+                                <i class="fa-solid fa-chalkboard fa-3x mb-3 text-secondary opacity-50"></i>
+                                <h5 class="fw-semibold text-secondary">Nenhuma turma encontrada</h5>
+                                <p class="text-muted small mb-3">Não há turmas cadastradas com os filtros selecionados.</p>
+                                <a href="/schoolclasses/create" class="btn btn-usp btn-sm fw-semibold">
+                                    <i class="fa-solid fa-plus me-1"></i> Cadastrar Nova Turma
+                                </a>
+                            </div>
                         </td>
                     </tr>
                 {% endif %}

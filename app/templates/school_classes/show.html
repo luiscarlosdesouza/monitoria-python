@@ -1,0 +1,273 @@
+{% extends "base.html" %}
+
+{% block title %}{{ c.coddis }} - Turma {{ c.codtur }} - IME-USP{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-10">
+        <!-- Navegação Breadcrumb -->
+        <nav aria-label="breadcrumb" class="mb-3">
+            <ol class="breadcrumb small">
+                <li class="breadcrumb-item"><a href="/" class="text-decoration-none">Início</a></li>
+                <li class="breadcrumb-item"><a href="/schoolclasses" class="text-decoration-none">Turmas</a></li>
+                <li class="breadcrumb-item active" aria-current="page">{{ c.coddis }} (Turma {{ c.codtur }})</li>
+            </ol>
+        </nav>
+
+        <!-- Barra Superior com Ações -->
+        <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-2">
+            <div>
+                <span class="badge bg-primary-subtle text-primary fw-semibold px-3 py-1.5 rounded-pill mb-1">
+                    {{ c.department.nomabvset if c.department else 'IME' }} &bull; 
+                    {{ c.school_term.year }}/{{ c.school_term.period if c.school_term else '' }}
+                </span>
+                <h2 class="fw-bold mb-0 text-dark">
+                    {{ c.coddis }} &mdash; {{ c.nomdis }}
+                </h2>
+                <div class="text-muted small">
+                    Turma <strong>{{ c.codtur }}</strong> &bull; Tipo: {{ c.tiptur or 'Teórica' }}
+                </div>
+            </div>
+            <div class="d-flex gap-2">
+                <a href="/schoolclasses" class="btn btn-outline-secondary btn-sm">
+                    <i class="fa-solid fa-arrow-left me-1"></i> Voltar
+                </a>
+                <a href="/schoolclasses/{{ c.id }}/edit" class="btn btn-outline-primary btn-sm fw-semibold">
+                    <i class="fa-solid fa-pen-to-square me-1"></i> Editar Turma
+                </a>
+                <button type="button" class="btn btn-outline-danger btn-sm" data-bs-toggle="modal" data-bs-target="#deleteClassModal">
+                    <i class="fa-solid fa-trash me-1"></i> Excluir
+                </button>
+            </div>
+        </div>
+
+        <div class="row g-4 mb-4">
+            <!-- Painel 1: Dados Gerais e Horários -->
+            <div class="col-md-6">
+                <div class="card card-custom p-4 h-100 shadow-sm">
+                    <h5 class="fw-bold text-dark border-bottom pb-2 mb-3">
+                        <i class="fa-solid fa-circle-info text-primary me-2"></i> Informações da Disciplina
+                    </h5>
+
+                    <div class="mb-3">
+                        <span class="text-muted small d-block">Departamento Responsável</span>
+                        <div class="fw-bold text-dark">
+                            {{ c.department.nomset if c.department else 'IME-USP' }} ({{ c.department.nomabvset if c.department else 'IME' }})
+                        </div>
+                    </div>
+
+                    <div class="row g-3 mb-3">
+                        <div class="col-6">
+                            <span class="text-muted small d-block">Período Letivo</span>
+                            <span class="fw-semibold text-dark">
+                                {{ c.school_term.year }}/{{ c.school_term.period if c.school_term else '-' }}
+                            </span>
+                        </div>
+                        <div class="col-6">
+                            <span class="text-muted small d-block">Status do Período</span>
+                            <span class="badge bg-success-subtle text-success">
+                                {{ c.school_term.status if c.school_term else 'Ativo' }}
+                            </span>
+                        </div>
+                    </div>
+
+                    <!-- Horários das Aulas -->
+                    <div class="mb-3">
+                        <span class="text-muted small d-block mb-1 fw-semibold">Horários das Aulas:</span>
+                        {% if c.class_schedules %}
+                            <div class="d-flex flex-wrap gap-2">
+                                {% for sch in c.class_schedules %}
+                                    <span class="badge bg-light text-dark border p-2 fs-6">
+                                        <i class="fa-regular fa-clock text-primary me-1"></i>
+                                        {{ sch.diasmnocp }}: {{ sch.horent }} às {{ sch.horsai }}
+                                    </span>
+                                {% endfor %}
+                            </div>
+                        {% else %}
+                            <span class="text-muted small fst-italic">Nenhum horário cadastrado para esta turma.</span>
+                        {% endif %}
+                    </div>
+
+                    <!-- Período de Aulas -->
+                    {% if c.dtainitur or c.dtafimtur %}
+                        <div class="small text-muted pt-2 border-top">
+                            <i class="fa-regular fa-calendar me-1"></i> Aulas de: 
+                            {{ c.dtainitur.strftime('%d/%m/%Y') if c.dtainitur else '-' }} a 
+                            {{ c.dtafimtur.strftime('%d/%m/%Y') if c.dtafimtur else '-' }}
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Painel 2: Docentes Responsáveis -->
+            <div class="col-md-6">
+                <div class="card card-custom p-4 h-100 shadow-sm">
+                    <h5 class="fw-bold text-dark border-bottom pb-2 mb-3">
+                        <i class="fa-solid fa-user-tie text-warning me-2"></i> Docente(s) Responsável(eis)
+                    </h5>
+
+                    {% if c.instructors %}
+                        <div class="list-group list-group-flush">
+                            {% for inst in c.instructors %}
+                                <div class="list-group-item px-0 py-2 d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <div class="fw-bold text-dark">{{ inst.nompes }}</div>
+                                        <div class="small text-muted">
+                                            NUSP: <code>{{ inst.codpes }}</code> &bull; {{ inst.codema or 'E-mail não informado' }}
+                                        </div>
+                                    </div>
+                                    <span class="badge bg-primary-subtle text-primary rounded-pill small">Docente</span>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="text-center py-4 text-muted">
+                            <i class="fa-regular fa-user fa-2x mb-2 d-block opacity-50"></i>
+                            Nenhum professor atribuído a esta turma ainda.
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Seção: Pedido de Monitoria da Turma -->
+        <div class="card card-custom p-4 mb-4 shadow-sm">
+            <div class="d-flex justify-content-between align-items-center border-bottom pb-3 mb-3">
+                <h5 class="fw-bold text-dark mb-0">
+                    <i class="fa-solid fa-clipboard-question text-warning me-2"></i> Solicitação de Monitoria
+                </h5>
+                {% if c.requisitions %}
+                    <a href="/requisitions/{{ c.requisitions[0].id }}" class="btn btn-outline-warning btn-sm fw-semibold">
+                        <i class="fa-solid fa-eye me-1"></i> Ver Detalhes do Pedido
+                    </a>
+                {% else %}
+                    <a href="/requisitions/create?class_id={{ c.id }}" class="btn btn-warning btn-sm fw-bold">
+                        <i class="fa-solid fa-plus me-1"></i> Fazer Pedido de Monitoria
+                    </a>
+                {% endif %}
+            </div>
+
+            {% if c.requisitions %}
+                {% set r = c.requisitions[0] %}
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <span class="text-muted small d-block">Vagas Solicitadas</span>
+                        <span class="fs-4 fw-bold text-primary">{{ r.requested_number }}</span> monitor(es)
+                    </div>
+                    <div class="col-md-4">
+                        <span class="text-muted small d-block">Docente Solicitante</span>
+                        <span class="fw-semibold text-dark">{{ r.instructor.nompes if r.instructor else '-' }}</span>
+                    </div>
+                    <div class="col-md-4">
+                        <span class="text-muted small d-block">Prioridade</span>
+                        {% if r.priority == 'Alta' %}
+                            <span class="badge bg-danger-subtle text-danger px-3 py-1.5 rounded-pill fw-semibold">Alta</span>
+                        {% else %}
+                            <span class="badge bg-info-subtle text-info px-3 py-1.5 rounded-pill">{{ r.priority }}</span>
+                        {% endif %}
+                    </div>
+                </div>
+
+                {% if r.activities %}
+                    <div class="mt-3">
+                        <span class="text-muted small d-block mb-1">Atividades Previstas:</span>
+                        <div class="d-flex flex-wrap gap-1">
+                            {% for act in r.activities %}
+                                <span class="badge bg-light text-secondary border small">{{ act.description }}</span>
+                            {% endfor %}
+                        </div>
+                    </div>
+                {% endif %}
+            {% else %}
+                <div class="text-center py-3 text-muted">
+                    Nenhum pedido de monitoria registrado para esta turma até o momento.
+                </div>
+            {% endif %}
+        </div>
+
+        <!-- Seção: Candidatos Inscritos na Turma -->
+        <div class="card card-custom p-4 shadow-sm mb-5">
+            <div class="d-flex justify-content-between align-items-center border-bottom pb-3 mb-3">
+                <h5 class="fw-bold text-dark mb-0">
+                    <i class="fa-solid fa-users text-info me-2"></i> Candidatos Inscritos nesta Turma ({{ c.enrollments|length }})
+                </h5>
+                <a href="/enrollments/create?class_id={{ c.id }}" class="btn btn-outline-info btn-sm fw-semibold">
+                    <i class="fa-solid fa-pen-to-square me-1"></i> Inscrever-se nesta Turma
+                </a>
+            </div>
+
+            {% if c.enrollments %}
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Candidato(a)</th>
+                                <th>Nº USP</th>
+                                <th>Modalidade</th>
+                                <th>Turnos</th>
+                                <th>Data Inscrição</th>
+                                <th class="text-end">Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for e in c.enrollments %}
+                            <tr>
+                                <td class="fw-semibold text-dark">{{ e.student.nompes }}</td>
+                                <td><code>{{ e.student.codpes }}</code></td>
+                                <td>
+                                    {% if e.voluntario %}
+                                        <span class="badge bg-secondary-subtle text-secondary">Voluntário</span>
+                                    {% else %}
+                                        <span class="badge bg-success-subtle text-success">Bolsista</span>
+                                    {% endif %}
+                                </td>
+                                <td class="small">
+                                    {% if e.disponibilidade_diurno %}<span class="badge bg-light text-dark border">Diurno</span>{% endif %}
+                                    {% if e.disponibilidade_noturno %}<span class="badge bg-dark text-white">Noturno</span>{% endif %}
+                                </td>
+                                <td class="small text-muted">{{ e.created_at.strftime('%d/%m/%Y') if e.created_at else '-' }}</td>
+                                <td class="text-end">
+                                    <a href="/enrollments/{{ e.id }}" class="btn btn-outline-primary btn-sm py-0 px-2" title="Ver Inscrição">
+                                        <i class="fa-solid fa-eye"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="text-center py-4 text-muted">
+                    <i class="fa-regular fa-folder-open fa-2x mb-2 d-block opacity-50"></i>
+                    Ainda não há alunos inscritos para esta turma.
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Modal Confirmação Exclusão -->
+<div class="modal fade" id="deleteClassModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header border-0 pb-0">
+                <h5 class="modal-title fw-bold text-danger">
+                    <i class="fa-solid fa-triangle-exclamation me-2"></i> Confirmar Exclusão
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+            </div>
+            <div class="modal-body py-3">
+                Deseja realmente excluir a turma <strong>{{ c.coddis }} - Turma {{ c.codtur }}</strong>?
+            </div>
+            <div class="modal-footer border-0 pt-0">
+                <button type="button" class="btn btn-light btn-sm" data-bs-dismiss="modal">Cancelar</button>
+                <form action="/schoolclasses/{{ c.id }}/delete" method="POST" class="d-inline">
+                    <button type="submit" class="btn btn-danger btn-sm fw-semibold">
+                        Sim, Excluir Turma
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

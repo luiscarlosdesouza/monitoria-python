@@ -1,0 +1,182 @@
+{% extends "base.html" %}
+
+{% block title %}Editar Turma - {{ c.coddis }} - IME-USP{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-9 col-xl-8">
+        <!-- Navegação Breadcrumb -->
+        <nav aria-label="breadcrumb" class="mb-3">
+            <ol class="breadcrumb small">
+                <li class="breadcrumb-item"><a href="/" class="text-decoration-none">Início</a></li>
+                <li class="breadcrumb-item"><a href="/schoolclasses" class="text-decoration-none">Turmas</a></li>
+                <li class="breadcrumb-item"><a href="/schoolclasses/{{ c.id }}" class="text-decoration-none">{{ c.coddis }}</a></li>
+                <li class="breadcrumb-item active" aria-current="page">Editar Turma</li>
+            </ol>
+        </nav>
+
+        <div class="card card-custom p-4 shadow-sm mb-5">
+            <div class="d-flex align-items-center pb-3 mb-4 border-bottom">
+                <div class="p-3 bg-primary bg-opacity-10 text-primary rounded-3 me-3">
+                    <i class="fa-solid fa-pen-to-square fa-2x"></i>
+                </div>
+                <div>
+                    <h3 class="fw-bold mb-1 text-dark">Editar Dados da Turma</h3>
+                    <p class="text-muted mb-0 small">
+                        Modifique informações cadastrais, período, departamento, docentes e horários da turma.
+                    </p>
+                </div>
+            </div>
+
+            <form action="/schoolclasses/{{ c.id }}/edit" method="POST">
+                <!-- Seção 1: Período e Departamento -->
+                <div class="row g-3 mb-4">
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold text-dark">
+                            Período Letivo <span class="text-danger">*</span>
+                        </label>
+                        <select name="school_term_id" class="form-select" required>
+                            {% for t in terms %}
+                                <option value="{{ t.id }}" {% if c.school_term_id == t.id %}selected{% endif %}>
+                                    {{ t.year }}/{{ t.period }} ({{ t.status }})
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold text-dark">
+                            Departamento <span class="text-danger">*</span>
+                        </label>
+                        <select name="department_id" class="form-select" required>
+                            {% for d in departments %}
+                                <option value="{{ d.id }}" {% if c.department_id == d.id %}selected{% endif %}>
+                                    {{ d.nomabvset }} - {{ d.nomset }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Seção 2: Disciplina e Turma -->
+                <div class="row g-3 mb-4">
+                    <div class="col-md-4">
+                        <label class="form-label fw-semibold text-dark">
+                            Código da Disciplina <span class="text-danger">*</span>
+                        </label>
+                        <input type="text" name="coddis" class="form-control text-uppercase" value="{{ c.coddis }}" required>
+                    </div>
+
+                    <div class="col-md-8">
+                        <label class="form-label fw-semibold text-dark">
+                            Nome da Disciplina <span class="text-danger">*</span>
+                        </label>
+                        <input type="text" name="nomdis" class="form-control" value="{{ c.nomdis or '' }}" required>
+                    </div>
+                </div>
+
+                <div class="row g-3 mb-4">
+                    <div class="col-md-4">
+                        <label class="form-label fw-semibold text-dark">
+                            Código da Turma <span class="text-danger">*</span>
+                        </label>
+                        <input type="text" name="codtur" class="form-control" value="{{ c.codtur }}" required>
+                    </div>
+
+                    <div class="col-md-4">
+                        <label class="form-label fw-semibold text-dark">Tipo de Turma</label>
+                        <select name="tiptur" class="form-select">
+                            <option value="Teórica" {% if c.tiptur == 'Teórica' %}selected{% endif %}>Teórica</option>
+                            <option value="Prática" {% if c.tiptur == 'Prática' %}selected{% endif %}>Prática</option>
+                            <option value="Teórica/Prática" {% if c.tiptur == 'Teórica/Prática' %}selected{% endif %}>Teórica/Prática</option>
+                            <option value="Laboratório" {% if c.tiptur == 'Laboratório' %}selected{% endif %}>Laboratório</option>
+                        </select>
+                    </div>
+
+                    <div class="col-md-4">
+                        <label class="form-label fw-semibold text-dark">Datas das Aulas</label>
+                        <div class="row g-1">
+                            <div class="col-6">
+                                <input type="date" name="dtainitur" class="form-control form-control-sm" 
+                                       value="{{ c.dtainitur.strftime('%Y-%m-%d') if c.dtainitur else '' }}" title="Início">
+                            </div>
+                            <div class="col-6">
+                                <input type="date" name="dtafimtur" class="form-control form-control-sm" 
+                                       value="{{ c.dtafimtur.strftime('%Y-%m-%d') if c.dtafimtur else '' }}" title="Fim">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Seção 3: Horários de Aula -->
+                <div class="mb-4 p-3 bg-light rounded-3 border">
+                    <label class="form-label fw-bold text-dark d-block mb-1">
+                        <i class="fa-regular fa-clock me-1 text-primary"></i> Horários Cadastrados
+                    </label>
+                    {% if c.class_schedules %}
+                        <div class="d-flex flex-wrap gap-2 mb-3">
+                            {% for sch in c.class_schedules %}
+                                <span class="badge bg-white text-dark border p-2 fs-6">
+                                    {{ sch.diasmnocp }}: {{ sch.horent }} às {{ sch.horsai }}
+                                </span>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <p class="small text-muted mb-2 fst-italic">Nenhum horário cadastrado no momento.</p>
+                    {% endif %}
+
+                    <span class="small fw-semibold text-secondary d-block mb-1">Adicionar Novo Horário:</span>
+                    <div class="row g-3 align-items-center">
+                        <div class="col-md-5">
+                            <input type="text" name="diasmnocp" class="form-control form-control-sm" placeholder="Dias (ex: Seg, Qua)">
+                        </div>
+                        <div class="col-md-3">
+                            <input type="time" name="horent" class="form-control form-control-sm" value="08:00">
+                        </div>
+                        <div class="col-md-3">
+                            <input type="time" name="horsai" class="form-control form-control-sm" value="10:00">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Seção 4: Docentes Responsáveis -->
+                <div class="mb-4">
+                    <label class="form-label fw-bold text-dark d-block mb-2">
+                        Docente(s) Responsável(eis) pela Turma
+                    </label>
+                    <div class="bg-light p-3 rounded-3 border" style="max-height: 220px; overflow-y: auto;">
+                        {% if instructors %}
+                            <div class="row g-2">
+                                {% for inst in instructors %}
+                                <div class="col-md-6">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" name="instructor_ids" 
+                                               value="{{ inst.id }}" id="inst{{ inst.id }}"
+                                               {% if inst.id in selected_instructor_ids %}checked{% endif %}>
+                                        <label class="form-check-label small" for="inst{{ inst.id }}">
+                                            <strong>{{ inst.nompes }}</strong> (NUSP: {{ inst.codpes }})
+                                        </label>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        {% else %}
+                            <p class="text-muted small mb-0">Nenhum docente cadastrado.</p>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Botões de Ação -->
+                <div class="d-flex justify-content-end gap-2 pt-3 border-top">
+                    <a href="/schoolclasses/{{ c.id }}" class="btn btn-outline-secondary px-4 fw-semibold">
+                        Cancelar
+                    </a>
+                    <button type="submit" class="btn btn-primary px-4 fw-bold shadow-sm">
+                        <i class="fa-solid fa-check me-1"></i> Salvar Alterações
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
