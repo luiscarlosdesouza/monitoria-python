@@ -1,0 +1,198 @@
+{% extends "base.html" %}
+
+{% block title %}Detalhes da Inscrição - {{ enr.student.nompes }} - IME-USP{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-9">
+        <!-- Navegação Breadcrumb -->
+        <nav aria-label="breadcrumb" class="mb-3">
+            <ol class="breadcrumb small">
+                <li class="breadcrumb-item"><a href="/" class="text-decoration-none">Início</a></li>
+                <li class="breadcrumb-item"><a href="/enrollments" class="text-decoration-none">Inscrições</a></li>
+                <li class="breadcrumb-item active" aria-current="page">{{ enr.student.nompes }} &bull; {{ enr.school_class.coddis }}</li>
+            </ol>
+        </nav>
+
+        <!-- Barra Superior com Ações -->
+        <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-2">
+            <div>
+                <span class="badge bg-primary-subtle text-primary fw-semibold px-3 py-1.5 rounded-pill mb-1">
+                    {{ enr.school_class.department.nomabvset if enr.school_class.department else 'IME' }} &bull; 
+                    {{ enr.school_class.school_term.year }}/{{ enr.school_class.school_term.period if enr.school_class.school_term else '' }}
+                </span>
+                <h2 class="fw-bold mb-0 text-dark">
+                    {{ enr.school_class.coddis }} &mdash; {{ enr.school_class.nomdis }}
+                </h2>
+                <div class="text-muted small">Turma <strong>{{ enr.school_class.codtur }}</strong> &bull; Candidato(a): <strong>{{ enr.student.nompes }}</strong></div>
+            </div>
+            <div class="d-flex gap-2">
+                <a href="/enrollments" class="btn btn-outline-secondary btn-sm">
+                    <i class="fa-solid fa-arrow-left me-1"></i> Voltar
+                </a>
+                {% if user and (user.role == 'admin' or (user.codpes and (user.codpes|string) == (enr.student.codpes|string))) %}
+                    <a href="/enrollments/{{ enr.id }}/edit" class="btn btn-outline-primary btn-sm fw-semibold">
+                        <i class="fa-solid fa-pen-to-square me-1"></i> Editar
+                    </a>
+                    <button type="button" class="btn btn-outline-danger btn-sm" data-bs-toggle="modal" data-bs-target="#deleteEnrModal">
+                        <i class="fa-solid fa-trash me-1"></i> Cancelar Inscrição
+                    </button>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="row g-4 mb-4">
+            <!-- Painel do Aluno -->
+            <div class="col-md-5">
+                <div class="card card-custom p-4 mb-4 shadow-sm">
+                    <h6 class="fw-bold text-dark border-bottom pb-2 mb-3">
+                        <i class="fa-solid fa-user-graduate text-info me-2"></i> Dados do Candidato
+                    </h6>
+                    <div class="fw-bold text-dark fs-6">{{ enr.student.nompes }}</div>
+                    <div class="small text-muted mb-2">Número USP: <code>{{ enr.student.codpes }}</code></div>
+                    <div class="small text-muted mb-3">
+                        <i class="fa-regular fa-envelope me-1"></i> {{ enr.student.codema or 'Não informado' }}
+                    </div>
+
+                    <!-- Histórico Escolar -->
+                    <div class="p-3 bg-light rounded-3 border">
+                        <span class="small fw-bold text-dark d-block mb-1">
+                            <i class="fa-solid fa-file-lines me-1 text-danger"></i> Histórico Escolar
+                        </span>
+                        {% if school_record %}
+                            <a href="{{ school_record.file_path }}" target="_blank" class="btn btn-danger btn-sm w-100 fw-semibold mt-1">
+                                <i class="fa-solid fa-file-pdf me-1"></i> Visualizar Histórico (PDF)
+                            </a>
+                            <div class="smaller text-muted mt-1 text-center">
+                                Atualizado em: {{ school_record.updated_at.strftime('%d/%m/%Y') if school_record.updated_at else '-' }}
+                            </div>
+                        {% else %}
+                            <span class="text-muted smaller fst-italic">
+                                Nenhum histórico em PDF foi anexado para este período letivo.
+                            </span>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Painel da Turma e Horários -->
+                <div class="card card-custom p-4 shadow-sm">
+                    <h6 class="fw-bold text-dark border-bottom pb-2 mb-3">
+                        <i class="fa-solid fa-chalkboard-user text-primary me-2"></i> Informações da Turma
+                    </h6>
+                    <div class="small mb-2">
+                        <strong>Docente(s):</strong>
+                        {% if enr.school_class.instructors %}
+                            <ul class="mb-0 ps-3 mt-1">
+                                {% for inst in enr.school_class.instructors %}
+                                    <li>{{ inst.nompes }}</li>
+                                {% endfor %}
+                            </ul>
+                        {% else %}
+                            <span class="text-muted fst-italic">A definir</span>
+                        {% endif %}
+                    </div>
+
+                    <div class="small">
+                        <strong>Horários de Aula:</strong>
+                        {% if enr.school_class.class_schedules %}
+                            <div class="mt-1 d-flex flex-wrap gap-1">
+                                {% for sch in enr.school_class.class_schedules %}
+                                    <span class="badge bg-light text-dark border">
+                                        {{ sch.diasmnocp }} {{ sch.horent }}-{{ sch.horsai }}
+                                    </span>
+                                {% endfor %}
+                            </div>
+                        {% else %}
+                            <span class="text-muted fst-italic d-block">Horários não cadastrados</span>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Painel das Opções da Inscrição -->
+            <div class="col-md-7">
+                <div class="card card-custom p-4 h-100 shadow-sm">
+                    <h5 class="fw-bold text-dark border-bottom pb-2 mb-3">
+                        <i class="fa-solid fa-sliders text-warning me-2"></i> Detalhes da Opção do Candidato
+                    </h5>
+
+                    <!-- Modalidade -->
+                    <div class="mb-4">
+                        <span class="text-muted small d-block mb-1">Modalidade Pretendida:</span>
+                        {% if enr.voluntario %}
+                            <span class="badge bg-secondary-subtle text-secondary px-3 py-2 rounded-pill fs-6">
+                                <i class="fa-solid fa-handshake-angle me-1"></i> Aceita Monitoria Voluntária
+                            </span>
+                            <div class="form-text small mt-1">O aluno aceita atuar voluntariamente caso não haja cota de bolsa disponível.</div>
+                        {% else %}
+                            <span class="badge bg-success-subtle text-success px-3 py-2 rounded-pill fs-6 fw-semibold">
+                                <i class="fa-solid fa-dollar-sign me-1"></i> Somente com Bolsa Remunerada
+                            </span>
+                            <div class="form-text small mt-1">O aluno optou por concorrer exclusivamente a cotas de bolsas remuneradas.</div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Disponibilidade -->
+                    <div class="mb-4">
+                        <span class="text-muted small d-block mb-1">Disponibilidade de Turnos:</span>
+                        <div class="d-flex gap-2">
+                            {% if enr.disponibilidade_diurno %}
+                                <span class="badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25 px-3 py-2">
+                                    <i class="fa-solid fa-sun me-1"></i> Período Diurno
+                                </span>
+                            {% endif %}
+                            {% if enr.disponibilidade_noturno %}
+                                <span class="badge bg-dark px-3 py-2">
+                                    <i class="fa-solid fa-moon me-1"></i> Período Noturno
+                                </span>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Preferências -->
+                    <div class="mb-4">
+                        <span class="text-muted small d-block mb-1">Preferência de Horários / Grade:</span>
+                        <div class="p-3 bg-light rounded-3 text-secondary small border">
+                            {{ enr.preferencia_horario or 'Nenhuma restrição de horário informada.' }}
+                        </div>
+                    </div>
+
+                    <!-- Justificativa / Observações -->
+                    <div>
+                        <span class="text-muted small d-block mb-1">Observações e Experiência Prévia:</span>
+                        <div class="p-3 bg-light rounded-3 text-secondary small border">
+                            {{ enr.observacoes or 'Nenhuma observação ou experiência prévia adicionada pelo candidato.' }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Confirmação Cancelamento -->
+<div class="modal fade" id="deleteEnrModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header border-0 pb-0">
+                <h5 class="modal-title fw-bold text-danger">
+                    <i class="fa-solid fa-triangle-exclamation me-2"></i> Confirmar Cancelamento
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+            </div>
+            <div class="modal-body py-3">
+                Deseja realmente cancelar esta inscrição na disciplina 
+                <strong>{{ enr.school_class.coddis }} (Turma {{ enr.school_class.codtur }})</strong>?
+            </div>
+            <div class="modal-footer border-0 pt-0">
+                <button type="button" class="btn btn-light btn-sm" data-bs-dismiss="modal">Fechar</button>
+                <form action="/enrollments/{{ enr.id }}/delete" method="POST" class="d-inline">
+                    <button type="submit" class="btn btn-danger btn-sm fw-semibold">
+                        Confirmar Cancelamento
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

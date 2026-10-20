@@ -27,6 +27,10 @@ __pycache__/
 .DS_Store
 Thumbs.db
 
+# Uploads de usuários
+app/static/uploads/*/*
+!app/static/uploads/*/.gitkeep
+
 # IDEs
 .vscode/
 .idea/

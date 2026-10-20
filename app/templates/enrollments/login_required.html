@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+
+{% block title %}Identificação Necessária - IME-USP{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center py-5">
+    <div class="col-md-7 col-lg-6 text-center">
+        <div class="card card-custom p-5 shadow-sm">
+            <div class="mb-4">
+                <div class="p-4 bg-warning bg-opacity-10 text-warning rounded-circle d-inline-block shadow-inner">
+                    <i class="fa-solid fa-lock fa-4x"></i>
+                </div>
+            </div>
+            
+            <h3 class="fw-bold text-dark mb-2">Autenticação Obrigatória</h3>
+            <p class="text-secondary mb-4">
+                Para realizar sua inscrição como monitor nas turmas do IME-USP, 
+                é necessário se autenticar com a sua <strong>Senha Única USP</strong>.
+            </p>
+
+            <div class="d-grid gap-2 col-md-10 mx-auto">
+                <a href="/auth/login" class="btn btn-warning btn-lg fw-bold shadow-sm">
+                    <i class="fa-solid fa-key me-2"></i> Entrar com Senha Única USP
+                </a>
+                <a href="/enrollments" class="btn btn-outline-secondary mt-2">
+                    <i class="fa-solid fa-arrow-left me-1"></i> Voltar para Inscrições
+                </a>
+            </div>
+
+            <div class="mt-4 pt-3 border-top text-muted small">
+                <i class="fa-solid fa-shield-halved me-1 text-primary"></i> 
+                Ambiente seguro integrado aos sistemas corporativos da Universidade de São Paulo.
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,191 @@
+{% extends "base.html" %}
+
+{% block title %}Inscrição de Monitor - IME-USP{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-9 col-xl-8">
+        <!-- Navegação Breadcrumb -->
+        <nav aria-label="breadcrumb" class="mb-3">
+            <ol class="breadcrumb small">
+                <li class="breadcrumb-item"><a href="/" class="text-decoration-none">Início</a></li>
+                <li class="breadcrumb-item"><a href="/enrollments" class="text-decoration-none">Inscrições</a></li>
+                <li class="breadcrumb-item active" aria-current="page">Fazer Inscrição</li>
+            </ol>
+        </nav>
+
+        <div class="card card-custom p-4 shadow-sm mb-5">
+            <!-- Cabeçalho do Formulário -->
+            <div class="d-flex align-items-center pb-3 mb-4 border-bottom">
+                <div class="p-3 bg-info bg-opacity-10 text-info rounded-3 me-3">
+                    <i class="fa-solid fa-file-pen fa-2x"></i>
+                </div>
+                <div>
+                    <h3 class="fw-bold mb-1 text-dark">Formulário de Inscrição em Monitoria</h3>
+                    <p class="text-muted mb-0 small">
+                        Período Letivo: <strong>{{ active_term.year }}/{{ active_term.period if active_term else 'Atual' }}</strong> 
+                        &bull; Limite de inscrições por candidato: <strong>{{ max_enrollments }}</strong>
+                    </p>
+                </div>
+            </div>
+
+            <!-- Identificação do Candidato Autenticado -->
+            <div class="p-3 bg-light rounded-3 border mb-4">
+                <div class="row align-items-center">
+                    <div class="col-md-8">
+                        <span class="text-muted small d-block">Candidato(a) Autenticado(a):</span>
+                        <h6 class="fw-bold text-dark mb-0">{{ student.nompes }}</h6>
+                        <div class="small text-muted">
+                            Número USP: <code>{{ student.codpes }}</code> &bull; E-mail: {{ student.codema }}
+                        </div>
+                    </div>
+                    <div class="col-md-4 text-md-end mt-2 mt-md-0">
+                        <span class="badge bg-primary px-3 py-2 fs-6 rounded-pill">
+                            {{ my_enrollments_count }} de {{ max_enrollments }} turmas
+                        </span>
+                        <div class="smaller text-muted mt-1">inscrições no período</div>
+                    </div>
+                </div>
+            </div>
+
+            {% if my_enrollments_count >= max_enrollments %}
+                <div class="alert alert-warning d-flex align-items-center mb-4" role="alert">
+                    <i class="fa-solid fa-triangle-exclamation fa-2x me-3"></i>
+                    <div>
+                        <strong>Limite máximo atingido!</strong><br>
+                        Você já realizou o limite permitido de {{ max_enrollments }} inscrições para este período letivo. 
+                        Para se inscrever em outra turma, cancele uma de suas inscrições anteriores na <a href="/enrollments" class="alert-link">página de inscrições</a>.
+                    </div>
+                </div>
+            {% endif %}
+
+            <form action="/enrollments/create" method="POST" enctype="multipart/form-data">
+                <!-- Seção 1: Escolha da Turma -->
+                <div class="mb-4">
+                    <label class="form-label fw-bold text-dark">
+                        1. Selecione a Turma Desejada <span class="text-danger">*</span>
+                    </label>
+                    <select name="school_class_id" class="form-select form-select-lg" required 
+                            {% if my_enrollments_count >= max_enrollments %}disabled{% endif %}>
+                        <option value="">Selecione a disciplina e turma...</option>
+                        {% for c in classes %}
+                            {% set is_already = (c.id in already_enrolled_class_ids) %}
+                            <option value="{{ c.id }}" 
+                                    {% if selected_class_id == c.id %}selected{% endif %}
+                                    {% if is_already %}disabled{% endif %}>
+                                {{ c.coddis }} - {{ c.nomdis }} (Turma {{ c.codtur }}) - {{ c.department.nomabvset if c.department else 'IME' }}
+                                {% if is_already %} [JÁ INSCRITO]{% endif %}
+                            </option>
+                        {% endfor %}
+                    </select>
+                    <div class="form-text small">
+                        Consulte os horários e docentes das turmas disponíveis antes de confirmar sua inscrição.
+                    </div>
+                </div>
+
+                <!-- Seção 2: Modalidade de Atuação (Bolsa / Voluntário) -->
+                <div class="mb-4 p-3 bg-light rounded-3 border">
+                    <label class="form-label fw-bold text-dark d-block mb-2">
+                        2. Opção de Monitoria Voluntária
+                    </label>
+                    <div class="form-check form-switch fs-6">
+                        <input class="form-check-input" type="checkbox" name="voluntario" id="switchVoluntario" value="1">
+                        <label class="form-check-label fw-semibold text-dark" for="switchVoluntario">
+                            Aceito atuar como monitor voluntário caso não seja contemplado com bolsa remunerada
+                        </label>
+                    </div>
+                    <div class="small text-muted mt-1 ps-4 ms-2">
+                        Monitores voluntários recebem certificado de monitoria com horas complementares válidas para o currículo.
+                    </div>
+                </div>
+
+                <!-- Seção 3: Disponibilidade de Horários -->
+                <div class="mb-4">
+                    <label class="form-label fw-bold text-dark d-block mb-2">
+                        3. Disponibilidade de Horários
+                    </label>
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <div class="card p-3 h-100 border">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="disponibilidade_diurno" 
+                                           id="checkDiurno" value="1" checked>
+                                    <label class="form-check-label fw-semibold text-dark" for="checkDiurno">
+                                        <i class="fa-solid fa-sun text-warning me-1"></i> Período Diurno
+                                    </label>
+                                </div>
+                                <div class="small text-muted mt-1 ps-4">
+                                    Disponibilidade para atendimento ou aulas entre 08h e 18h.
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="card p-3 h-100 border">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="disponibilidade_noturno" 
+                                           id="checkNoturno" value="1">
+                                    <label class="form-check-label fw-semibold text-dark" for="checkNoturno">
+                                        <i class="fa-solid fa-moon text-primary me-1"></i> Período Noturno
+                                    </label>
+                                </div>
+                                <div class="small text-muted mt-1 ps-4">
+                                    Disponibilidade para atendimento ou aulas após as 18h.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mt-3">
+                        <label class="form-label small fw-semibold text-secondary mb-1">
+                            Preferência de Horários / Observações de Grade (Opcional):
+                        </label>
+                        <input type="text" name="preferencia_horario" class="form-control" 
+                               placeholder="Ex: Disponível terças e quintas à tarde; conflito com aula às segundas 10h.">
+                    </div>
+                </div>
+
+                <!-- Seção 4: Histórico Escolar (PDF) -->
+                <div class="mb-4">
+                    <label class="form-label fw-bold text-dark d-block mb-1">
+                        4. Histórico Escolar Atualizado (PDF)
+                    </label>
+                    <div class="input-group">
+                        <input type="file" name="history_file" class="form-control" accept=".pdf">
+                        <span class="input-group-text"><i class="fa-solid fa-file-pdf text-danger"></i></span>
+                    </div>
+                    {% if existing_record %}
+                        <div class="mt-2 small text-success">
+                            <i class="fa-solid fa-circle-check me-1"></i>
+                            Você já possui um histórico anexado para este período (<a href="{{ existing_record.file_path }}" target="_blank" class="text-success fw-semibold text-decoration-underline">ver arquivo</a>). O envio de um novo arquivo substituirá o anterior.
+                        </div>
+                    {% else %}
+                        <div class="form-text small">
+                            Anexe o PDF emitido pelo JúpiterWeb (Graduação) ou Janus (Pós-Graduação).
+                        </div>
+                    {% endif %}
+                </div>
+
+                <!-- Seção 5: Observações do Candidato -->
+                <div class="mb-4">
+                    <label class="form-label fw-bold text-dark mb-1">
+                        5. Justificativa / Experiência Prévia (Opcional)
+                    </label>
+                    <textarea name="observacoes" class="form-control" rows="3" 
+                              placeholder="Informe caso já tenha sido monitor desta ou de outras disciplinas, nota obtida quando a cursou, projetos correlatos, etc."></textarea>
+                </div>
+
+                <!-- Botões de Ação -->
+                <div class="d-flex justify-content-end gap-2 pt-3 border-top">
+                    <a href="/enrollments" class="btn btn-outline-secondary px-4 fw-semibold">
+                        Cancelar
+                    </a>
+                    <button type="submit" class="btn btn-primary px-4 fw-bold shadow-sm"
+                            {% if my_enrollments_count >= max_enrollments %}disabled{% endif %}>
+                        <i class="fa-solid fa-check me-1"></i> Confirmar Inscrição
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
